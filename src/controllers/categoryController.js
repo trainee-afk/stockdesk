@@ -15,13 +15,6 @@ const handleGetCategoryById = asyncHandler(async (req, res) => {
     const categoryId = req.params.id;
     const category = await categoryService.getCategoryById(categoryId);
 
-    if (!category) {
-        return res.status(404).json({
-            success: false,
-            message: "Category not found",
-        });
-    }
-
     res.status(200).json({
         success: true,
         message: "Category retrieved successfully",
@@ -29,7 +22,19 @@ const handleGetCategoryById = asyncHandler(async (req, res) => {
     });
 });
 
+const handleUpdateCategory = asyncHandler(async (req, res) => {
+    const categoryId = req.params.id;
+    const updatedCategory = await categoryService.updateCategory(categoryId, req.body);
+
+    res.status(200).json({
+        success: true,
+        message: "Category updated successfully",
+        data: updatedCategory,
+    });
+});
+
 module.exports = {
     handleCreateCategory,
     handleGetCategoryById,
+    handleUpdateCategory,
 };

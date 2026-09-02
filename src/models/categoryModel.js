@@ -32,8 +32,48 @@ const getCategoryById = async (categoryId) => {
 }
 
 
+const updateCategory = async (categoryId, categoryData) => {
+    const fields = [];
+    const values = [];
+    let paramIndex = 1;
+
+    console.log(categoryData);
+
+
+    if (categoryData.name !== undefined) {
+        fields.push(`name = $${paramIndex}`);
+        values.push(categoryData.name);
+        paramIndex++;
+    }
+
+    if (categoryData.description !== undefined) {
+        fields.push(`description = $${paramIndex}`);
+        values.push(categoryData.description);
+        paramIndex++;
+    }
+
+    if (fields.length === 0) {
+        return null;
+    }
+
+    values.push(categoryId);
+
+    const result = await db.query(
+        `
+            UPDATE category
+            SET ${fields.join(", ")}
+            WHERE id = $${paramIndex}
+            RETURNING *
+        `,
+        values
+    );
+
+    return result.rows[0];
+};
+
 module.exports = {
     createCategory,
     getCategoryByName,
     getCategoryById,
+    updateCategory,
 };

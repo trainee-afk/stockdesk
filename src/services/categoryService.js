@@ -16,10 +16,31 @@ const createCategory = async (categoryData) => {
 
 const getCategoryById = async (categoryId) => {
     const category = await categoryModel.getCategoryById(categoryId);
+
+    if (!category) {
+        const error = new Error("Category not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
     return category;
+};
+
+const updateCategory = async (categoryId, categoryData) => {
+    const category = await categoryModel.getCategoryById(categoryId);
+
+    if (!category) {
+        const error = new Error("Category not found");
+        error.statusCode = 404;
+        throw error;
+    }
+    const updatedCategory = await categoryModel.updateCategory(categoryId, categoryData);
+
+    return updatedCategory;
 };
 
 module.exports = {
     createCategory,
     getCategoryById,
+    updateCategory,
 };
