@@ -44,7 +44,7 @@ const authenticateWeb = (req, res, next) => {
 // Authentication for static apis
 const authenticateApi = (req, res, next) => {
     if (!req.user) {
-        return res.status(401).json({ success: false, message: 'Unauthorized access' });
+        return res.status(401).json({ success: false, message: 'User not authenticated' });
     }
     next();
 };

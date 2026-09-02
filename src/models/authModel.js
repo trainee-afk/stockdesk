@@ -11,7 +11,7 @@ const registerUser = async (userData) => {
     return result.rows[0];
 };
 
-const getUser = async (email) => {
+const getUserByEmail = async (email) => {
 
     const result = await db.query(
         "select email, password, role from users where email = $1",
@@ -21,4 +21,4 @@ const getUser = async (email) => {
     return result.rows[0];
 };
 
-module.exports = { registerUser, getUser };
+module.exports = { registerUser, getUserByEmail };

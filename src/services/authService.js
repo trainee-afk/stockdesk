@@ -14,7 +14,7 @@ const registerUser = async (userData) => {
 };
 
 const loginUser = async (email, password) => {
-    const user = await authModel.getUser(email);
+    const user = await authModel.getUserByEmail(email);
     if (!user) {
         throw new Error("Invalid email or password");
     }

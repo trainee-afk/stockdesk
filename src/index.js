@@ -4,7 +4,7 @@ const cookieParser = require("cookie-parser");
 const db = require('./config/db');
 const asyncHandler = require("./middlewares/asyncHandler");
 const errorHandler = require("./middlewares/errorHandler");
-const { authenticate, authenticateWeb, authenticateApi } = require("./middlewares/authenticate");
+const { authenticate } = require("./middlewares/authenticate");
 const { authorizeWeb, authorizeApi } = require("./middlewares/authorize");
 
 const authRoute = require("./routes/authRoute");

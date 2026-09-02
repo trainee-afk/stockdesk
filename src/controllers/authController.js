@@ -32,4 +32,14 @@ const handleLoginUser = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { handleRegisterUser, handleLoginUser };
+const handleGetMe = asyncHandler(async (req, res) => {
+    const user = { email: req.user.email, role: req.user.role };
+
+    res.status(200).json({
+        success: true,
+        message: "User Profile fetched successfully",
+        data: user,
+    });
+});
+
+module.exports = { handleRegisterUser, handleLoginUser, handleGetMe };
