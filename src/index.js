@@ -1,8 +1,11 @@
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const db = require('./config/db');
 const asyncHandler = require("./middlewares/asyncHandler");
 const errorHandler = require("./middlewares/errorHandler");
+const { authenticate, authenticateWeb, authenticateApi } = require("./middlewares/authenticate");
+const { authorizeWeb, authorizeApi } = require("./middlewares/authorize");
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -15,7 +18,8 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
+app.use(cookieParser()); //For req.cookies
+app.use(authenticate); // Attach user info to req.user and res.locals.user else null
 
 app.get("/health", asyncHandler(async (req, res) => {
     res.json({ message: "Hello, World!" });
