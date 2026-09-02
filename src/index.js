@@ -8,6 +8,7 @@ const { authenticate } = require("./middlewares/authenticate");
 const { authorizeWeb, authorizeApi } = require("./middlewares/authorize");
 
 const authRoute = require("./routes/authRoute");
+const categoryRoute = require("./routes/categoryRoute");
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -30,7 +31,8 @@ app.get("/health", asyncHandler(async (req, res) => {
 }));
 
 
-app.use("/auth", authRoute);
+app.use("/api/auth", authRoute);
+app.use("/api/categories", categoryRoute);
 
 
 

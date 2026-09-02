@@ -1,12 +1,7 @@
 
-
 const validator = (schema) => (req, res, next) => {
 
-    console.log("Request Body:", req.body);
-
     const validationResult = schema.safeParse(req.body);
-
-    console.log("Validation Result:", validationResult);
 
     if (!validationResult.success) {
         const issues = validationResult.error?.issues || validationResult.error?.errors || [];
