@@ -22,7 +22,18 @@ const getCategoryByName = async (name) => {
     return result.rows[0];
 };
 
+const getCategoryById = async (categoryId) => {
+    const result = await db.query(
+        `SELECT * FROM category WHERE id = $1`,
+        [categoryId]
+    );
+
+    return result.rows[0];
+}
+
+
 module.exports = {
     createCategory,
     getCategoryByName,
+    getCategoryById,
 };

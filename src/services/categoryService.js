@@ -14,6 +14,12 @@ const createCategory = async (categoryData) => {
     return category;
 };
 
+const getCategoryById = async (categoryId) => {
+    const category = await categoryModel.getCategoryById(categoryId);
+    return category;
+};
+
 module.exports = {
     createCategory,
+    getCategoryById,
 };

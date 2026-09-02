@@ -11,6 +11,25 @@ const handleCreateCategory = asyncHandler(async (req, res) => {
     });
 });
 
+const handleGetCategoryById = asyncHandler(async (req, res) => {
+    const categoryId = req.params.id;
+    const category = await categoryService.getCategoryById(categoryId);
+
+    if (!category) {
+        return res.status(404).json({
+            success: false,
+            message: "Category not found",
+        });
+    }
+
+    res.status(200).json({
+        success: true,
+        message: "Category retrieved successfully",
+        data: category,
+    });
+});
+
 module.exports = {
     handleCreateCategory,
+    handleGetCategoryById,
 };
