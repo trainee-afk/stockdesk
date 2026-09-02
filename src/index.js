@@ -7,6 +7,8 @@ const errorHandler = require("./middlewares/errorHandler");
 const { authenticate, authenticateWeb, authenticateApi } = require("./middlewares/authenticate");
 const { authorizeWeb, authorizeApi } = require("./middlewares/authorize");
 
+const authRoute = require("./routes/authRoute");
+
 var corsOptions = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
     optionsSuccessStatus: 200
@@ -19,11 +21,18 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser()); //For req.cookies
+
+
 app.use(authenticate); // Attach user info to req.user and res.locals.user else null
 
 app.get("/health", asyncHandler(async (req, res) => {
     res.json({ message: "Hello, World!" });
 }));
+
+
+app.use("/auth", authRoute);
+
+
 
 app.use(errorHandler);
 
