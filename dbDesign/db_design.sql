@@ -1,11 +1,9 @@
-CREATE TYPE user_role_enum AS ENUM ('ADMIN', 'STAFF');
-CREATE TYPE order_status_enum AS ENUM ('PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED');
 
 create table "user" (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role user_role_enum NOT NULL,
+    role VARCHAR(100) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -46,7 +44,7 @@ create table customer (
 create table "order" (
     id SERIAL PRIMARY KEY,
     fk_customer_id INT NOT NULL REFERENCES customer(id) ON DELETE RESTRICT,
-    status order_status_enum NOT NULL,
+    status VARCHAR(100) NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
