@@ -26,16 +26,34 @@ app.use(errorHandler);
 
 async function testConnection() {
     try {
-        const res = await db.query('SELECT NOW()');
-        console.log('Connected to PostgreSQL successfully at:', res.rows[0].now);
+        const res = await db.query("SELECT NOW()");
+
+        console.log(
+            "Connected to PostgreSQL successfully at:",
+            res.rows[0].now
+        );
     } catch (err) {
-        console.error('Database connection failed:', err.stack);
+        throw new Error("Failed to connect to the database: " + err.message);
     }
 }
 
-testConnection();
 
+async function startServer() {
+    try {
+        await testConnection();
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET not found");
+        }
+
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error("ERROR -", err.message);
+        process.exit(1);
+    }
+}
+
+startServer();
+
