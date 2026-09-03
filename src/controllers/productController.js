@@ -41,9 +41,24 @@ const handleDeleteProduct = asyncHandler(async (req, res) => {
     });
 });
 
+const handleGetProducts = asyncHandler(async (req, res) => {
+
+    const filters = req.query;
+
+    const result = await productService.getProducts(filters);
+
+    res.status(200).json({
+        success: true,
+        message: "Products retrieved successfully",
+        data: result,
+    });
+
+});
+
 module.exports = {
     handleCreateProduct,
     handleGetProductById,
     handleUpdateProduct,
     handleDeleteProduct,
+    handleGetProducts,
 };

@@ -14,4 +14,7 @@ router.patch("/:id", authorizeApi("ADMIN"), validatorMiddleware(updateProductSch
 
 router.delete("/:id", authorizeApi("ADMIN"), productController.handleDeleteProduct);
 
+//Product Listing
+router.get("/", authenticateApi, productController.handleGetProducts);
+
 module.exports = router;

@@ -70,9 +70,55 @@ const deleteProduct = async (productId) => {
     return productModel.deleteProduct(productId);
 };
 
+
+const getProducts = async (filters) => {
+
+    const { sortBy, order, page, limit } = filters || {};
+
+    let paginationFields = {};
+
+    if (sortBy && order) {
+        if (!["price", "stock_quantity"].includes(sortBy)) {
+            const error = new Error("Invalid sortBy field");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        if (!["asc", "desc"].includes(order.toLowerCase())) {
+            const error = new Error("Invalid order value");
+            error.statusCode = 400;
+            throw error;
+        }
+    }
+
+    if (page <= 0 || limit < 0) {
+        const error = new Error("Page and limit must be positive integers");
+        error.statusCode = 400;
+        throw error;
+    }
+
+
+    const products = await productModel.getProducts(filters);
+
+
+    if (page !== undefined && limit !== undefined) {
+
+        paginationFields.page = page;
+
+        const total = await productModel.getProductsCount({}); // total products count (no filters)
+
+        paginationFields.total = total;
+        paginationFields.totalPages = Math.ceil(total / limit);
+    }
+
+
+    return { products, pagination: paginationFields };
+}
+
 module.exports = {
     createProduct,
     getProductById,
     updateProduct,
     deleteProduct,
+    getProducts
 };

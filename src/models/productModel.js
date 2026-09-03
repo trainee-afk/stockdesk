@@ -77,10 +77,90 @@ const deleteProduct = async (productId) => {
     return result.rows[0];
 };
 
+
+const _getProductsQuery = async (filters) => {
+
+    let paramIndex = 1;
+    const fields = [];
+    const values = [];
+
+    const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order } = filters || {};
+
+    if (search !== undefined && search.trim() !== "") {
+        fields.push(`(name ilike $${paramIndex} or sku ilike $${paramIndex})`);
+        values.push(`%${search}%`);
+        paramIndex++;
+    }
+
+    if (categoryId) {
+        fields.push(`fk_category_id = $${paramIndex}`);
+        values.push(categoryId);
+        paramIndex++;
+    }
+
+    if (minPrice !== undefined && maxPrice !== undefined) {
+        fields.push(`price BETWEEN $${paramIndex} AND $${paramIndex + 1}`);
+        values.push(minPrice, maxPrice);
+        paramIndex += 2;
+    }
+
+    if (inStock !== undefined) {
+
+        if (inStock === "true") fields.push(`stock_quantity > 0`);
+        else fields.push(`stock_quantity = 0`);
+    }
+
+    const whereClause = fields.length > 0 ? `WHERE ${fields.join(" AND ")}` : "";
+
+    let orderByClause = "";
+
+    if (sortBy && order) {
+        orderByClause = `ORDER BY ${sortBy} ${order.toUpperCase()}`;
+    }
+
+    let paginationClause = "";
+
+    if (page !== undefined && limit !== undefined) {
+        const offset = (page - 1) * limit;
+        paginationClause = `LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        values.push(limit, offset);
+    }
+
+
+    const query = `
+        SELECT * FROM product
+        ${whereClause}
+        ${orderByClause}
+        ${paginationClause}
+    `;
+
+    return { query, values };
+
+};
+
+const getProducts = async (filters) => {
+    const { query, values } = await _getProductsQuery(filters);
+
+    const result = await db.query(query, values);
+
+    return result.rows;
+}
+
+
+const getProductsCount = async (filters) => {
+    const { query, values } = await _getProductsQuery(filters);
+
+    const countQuery = `SELECT COUNT(*) FROM (${query}) AS count_query`;
+    const result = await db.query(countQuery, values);
+    return parseInt(result.rows[0].count);
+}
+
 module.exports = {
     createProduct,
     getProductBySku,
     getProductById,
     updateProduct,
     deleteProduct,
+    getProducts,
+    getProductsCount
 };
