@@ -12,4 +12,6 @@ router.get("/:id", authenticateApi, categoryController.handleGetCategoryById);
 
 router.patch("/:id", authorizeApi("ADMIN"), validatorMiddleware(updateCategorySchema), categoryController.handleUpdateCategory);
 
+router.delete("/:id", authorizeApi("ADMIN"), categoryController.handleDeleteCategory);
+
 module.exports = router;

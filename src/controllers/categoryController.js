@@ -33,8 +33,20 @@ const handleUpdateCategory = asyncHandler(async (req, res) => {
     });
 });
 
+const handleDeleteCategory = asyncHandler(async (req, res) => {
+    const categoryId = req.params.id;
+    const deletedCategory = await categoryService.deleteCategory(categoryId);
+
+    res.status(200).json({
+        success: true,
+        message: "Category deleted successfully",
+        data: deletedCategory,
+    });
+});
+
 module.exports = {
     handleCreateCategory,
     handleGetCategoryById,
     handleUpdateCategory,
+    handleDeleteCategory
 };

@@ -29,16 +29,13 @@ const getCategoryById = async (categoryId) => {
     );
 
     return result.rows[0];
-}
+};
 
 
 const updateCategory = async (categoryId, categoryData) => {
     const fields = [];
     const values = [];
     let paramIndex = 1;
-
-    console.log(categoryData);
-
 
     if (categoryData.name !== undefined) {
         fields.push(`name = $${paramIndex}`);
@@ -71,9 +68,19 @@ const updateCategory = async (categoryId, categoryData) => {
     return result.rows[0];
 };
 
+const deleteCategory = async (categoryId) => {
+    const result = await db.query(
+        `DELETE FROM category WHERE id = $1 RETURNING *`,
+        [categoryId]
+    );
+
+    return result.rows[0];
+};
+
 module.exports = {
     createCategory,
     getCategoryByName,
     getCategoryById,
     updateCategory,
+    deleteCategory
 };
