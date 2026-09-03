@@ -1,4 +1,5 @@
 const categoryModel = require("../models/categoryModel");
+const productService = require("./productService");
 
 const createCategory = async (categoryData) => {
     const { name } = categoryData;
@@ -47,6 +48,14 @@ const deleteCategory = async (categoryId) => {
     if (!category) {
         const error = new Error("Category not found");
         error.statusCode = 404;
+        throw error;
+    }
+
+    const categoryProducts = await productService.getProducts({ categoryId });
+
+    if (categoryProducts.products.length !== 0) {
+        const error = new Error("Products of this category still exists");
+        error.statusCode = 400;
         throw error;
     }
 
