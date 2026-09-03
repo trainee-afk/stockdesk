@@ -3,6 +3,9 @@ const validator = (schema) => (req, res, next) => {
 
     const validationResult = schema.safeParse(req.body);
 
+    console.log(validationResult);
+
+
     if (!validationResult.success) {
         const issues = validationResult.error?.issues || validationResult.error?.errors || [];
         const formattedErrors = issues.map((err) => ({

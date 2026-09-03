@@ -5,10 +5,11 @@ const db = require('./config/db');
 const asyncHandler = require("./middlewares/asyncHandler");
 const errorHandler = require("./middlewares/errorHandler");
 const { authenticate } = require("./middlewares/authenticate");
-const { authorizeWeb, authorizeApi } = require("./middlewares/authorize");
+// const { authorizeWeb, authorizeApi } = require("./middlewares/authorize");
 
 const authRoute = require("./routes/authRoute");
 const categoryRoute = require("./routes/categoryRoute");
+const productRoute = require("./routes/productRoute");
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -33,6 +34,7 @@ app.get("/health", asyncHandler(async (req, res) => {
 
 app.use("/api/auth", authRoute);
 app.use("/api/categories", categoryRoute);
+app.use("/api/products", productRoute);
 
 
 
