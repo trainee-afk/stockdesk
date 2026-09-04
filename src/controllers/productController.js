@@ -55,10 +55,22 @@ const handleGetProducts = asyncHandler(async (req, res) => {
 
 });
 
+const handleGetLowStockProducts = asyncHandler(async (req, res) => {
+    const { threshold } = req.query;
+    const lowStockProducts = await productService.getLowStockProducts(threshold);
+
+    res.status(200).json({
+        success: true,
+        message: "Low stock products retrieved successfully",
+        data: lowStockProducts,
+    });
+});
+
 module.exports = {
     handleCreateProduct,
     handleGetProductById,
     handleUpdateProduct,
     handleDeleteProduct,
     handleGetProducts,
+    handleGetLowStockProducts
 };

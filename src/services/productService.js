@@ -88,10 +88,17 @@ const getProducts = async (filters) => {
     };
 }
 
+
+const getLowStockProducts = async (threshold) => {
+    const lowStockProducts = await productModel.getProducts({ stock_threshold: threshold, limit: undefined, page: undefined });
+    return lowStockProducts;
+}
+
 module.exports = {
     createProduct,
     getProductById,
     updateProduct,
     deleteProduct,
-    getProducts
+    getProducts,
+    getLowStockProducts
 };

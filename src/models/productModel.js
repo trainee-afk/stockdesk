@@ -84,7 +84,7 @@ const getProductsQuery = (filters) => {
     const fields = [];
     const values = [];
 
-    const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order, productIds } = filters || {};
+    const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order, productIds, stock_threshold } = filters || {};
 
     if (search && search.trim() !== "") {
         fields.push(`(name ilike $${paramIndex} or sku ilike $${paramIndex})`);
@@ -117,27 +117,29 @@ const getProductsQuery = (filters) => {
     }
 
     if (inStock !== undefined) {
-
         if (inStock === "true") fields.push(`stock_quantity > 0`);
         else fields.push(`stock_quantity = 0`);
+    }
+
+    if (stock_threshold !== undefined) {
+        fields.push(`stock_quantity <= $${paramIndex}`);
+        values.push(stock_threshold);
+        paramIndex++;
     }
 
     const whereClause = fields.length > 0 ? `WHERE ${fields.join(" AND ")}` : "";
 
     let orderByClause = "";
-
     if (sortBy) {
         orderByClause = `ORDER BY ${sortBy} ${(order || "asc").toUpperCase()}`;
     }
 
     let paginationClause = "";
-
     if (page !== undefined && limit !== undefined) {
         const offset = (page - 1) * limit;
         paginationClause = `LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         values.push(limit, offset);
     }
-
 
     const query = `
         SELECT * FROM product
