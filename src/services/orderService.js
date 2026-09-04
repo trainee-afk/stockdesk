@@ -152,9 +152,72 @@ const getOrderById = async (orderId) => {
     return order;
 };
 
+const updateOrderStatus = async (orderId, newStatus) => {
+    const allowedTransitions = {
+        PENDING: ["CONFIRMED", "CANCELLED"],
+        CONFIRMED: ["SHIPPED", "CANCELLED"],
+        SHIPPED: ["DELIVERED"],
+        DELIVERED: [],
+        CANCELLED: [],
+    };
+    const client = await db.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const orderQuery = orderModel.getOrderStatusQuery(orderId);
+        const orderResult = await client.query(
+            orderQuery.query,
+            orderQuery.values
+        );
+
+        if (orderResult.rowCount === 0) {
+            const error = new Error("Order not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const currentStatus = orderResult.rows[0].status;
+        if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+            const error = new Error(
+                `Cannot change order status from ${currentStatus} to ${newStatus}`
+            );
+            error.statusCode = 400;
+            throw error;
+        }
+
+        if (newStatus === "CANCELLED") {
+            const restoreStockQuery = orderModel.restoreOrderStockQuery(orderId);
+            await client.query(
+                restoreStockQuery.query,
+                restoreStockQuery.values
+            );
+        }
+
+        const updateStatusQuery = orderModel.updateOrderStatusQuery(
+            orderId,
+            newStatus
+        );
+        const updatedOrderResult = await client.query(
+            updateStatusQuery.query,
+            updateStatusQuery.values
+        );
+
+        await client.query("COMMIT");
+
+        return updatedOrderResult.rows[0];
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
 
 module.exports = {
     createOrder,
     getOrders,
     getOrderById,
+    updateOrderStatus,
 };

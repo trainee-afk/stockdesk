@@ -38,7 +38,18 @@ const listOrdersSchema = z.object({
     { message: "from must be before or equal to to", path: ["from"] }
 );
 
+const updateOrderStatusSchema = z.object({
+    status: z.enum([
+        "PENDING",
+        "CONFIRMED",
+        "SHIPPED",
+        "DELIVERED",
+        "CANCELLED",
+    ]),
+});
+
 module.exports = {
     createOrderSchema,
     listOrdersSchema,
+    updateOrderStatusSchema,
 };

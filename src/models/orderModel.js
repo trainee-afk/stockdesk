@@ -147,10 +147,51 @@ const getOrderById = async (orderId) => {
     return result.rows[0];
 };
 
+const getOrderStatusQuery = (orderId) => {
+    const query = `
+        SELECT id, status
+        FROM orders
+        WHERE id = $1
+        FOR UPDATE;
+    `;
+    const values = [orderId];
+
+    return { query, values };
+};
+
+const restoreOrderStockQuery = (orderId) => {
+    const query = `
+        UPDATE product AS p
+        SET stock_quantity = p.stock_quantity + oi.quantity
+        FROM order_item AS oi
+        WHERE oi.fk_order_id = $1
+          AND p.id = oi.fk_product_id
+        RETURNING p.id, p.stock_quantity;
+    `;
+    const values = [orderId];
+
+    return { query, values };
+};
+
+const updateOrderStatusQuery = (orderId, status) => {
+    const query = `
+        UPDATE orders
+        SET status = $1
+        WHERE id = $2
+        RETURNING *;
+    `;
+    const values = [status, orderId];
+
+    return { query, values };
+};
+
 module.exports = {
     createOrderQuery,
     createOrderItemsQuery,
     getOrders,
     getOrdersCount,
     getOrderById,
+    getOrderStatusQuery,
+    restoreOrderStockQuery,
+    updateOrderStatusQuery,
 };
