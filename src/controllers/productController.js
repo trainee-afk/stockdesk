@@ -66,11 +66,23 @@ const handleGetLowStockProducts = asyncHandler(async (req, res) => {
     });
 });
 
+const handleGetTopProducts = asyncHandler(async (req, res) => {
+    const { limit } = req.query;
+    const topProducts = await productService.getTopProductsByQuantitySold(limit);
+
+    res.status(200).json({
+        success: true,
+        message: "Top products retrieved successfully",
+        data: topProducts,
+    });
+});
+
 module.exports = {
     handleCreateProduct,
     handleGetProductById,
     handleUpdateProduct,
     handleDeleteProduct,
     handleGetProducts,
+    handleGetTopProducts,
     handleGetLowStockProducts
 };

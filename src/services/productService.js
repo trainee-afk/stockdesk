@@ -94,11 +94,17 @@ const getLowStockProducts = async (threshold) => {
     return lowStockProducts;
 }
 
+const getTopProductsByQuantitySold = async (limit) => {
+    const topProducts = await productModel.getTopProductsByQuantitySold({ limit });
+    return topProducts;
+}
+
 module.exports = {
     createProduct,
     getProductById,
     updateProduct,
     deleteProduct,
     getProducts,
+    getTopProductsByQuantitySold,
     getLowStockProducts
 };

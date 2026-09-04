@@ -197,6 +197,25 @@ const decreaseStockQuery = (lineItems) => {
     return { query, values };
 };
 
+
+const getTopProductsByQuantitySold = async (filters) => {
+    const { limit } = filters || {};
+
+    const query = `
+        SELECT p.*, SUM(oi.quantity) AS sold_quantity
+        FROM order_item AS oi
+        JOIN orders AS o ON oi.fk_order_id = o.id and o.status IN ('DELIVERED', 'SHIPPED')
+        JOIN product AS p ON oi.fk_product_id = p.id
+        GROUP BY p.id
+        ORDER BY sold_quantity DESC
+        LIMIT $1
+    `;
+
+    const result = await db.query(query, [limit]);
+    return result.rows;
+};
+
+
 module.exports = {
     createProduct,
     getProductBySku,
@@ -207,4 +226,5 @@ module.exports = {
     getProducts,
     getProductsCount,
     decreaseStockQuery,
+    getTopProductsByQuantitySold
 };
