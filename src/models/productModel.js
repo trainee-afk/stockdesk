@@ -78,13 +78,13 @@ const deleteProduct = async (productId) => {
 };
 
 
-const _getProductsQuery = async (filters) => {
+const getProductsQuery = (filters) => {
 
     let paramIndex = 1;
     const fields = [];
     const values = [];
 
-    const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order } = filters || {};
+    const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order, productIds } = filters || {};
 
     if (search !== undefined && search.trim() !== "") {
         fields.push(`(name ilike $${paramIndex} or sku ilike $${paramIndex})`);
@@ -95,6 +95,12 @@ const _getProductsQuery = async (filters) => {
     if (categoryId) {
         fields.push(`fk_category_id = $${paramIndex}`);
         values.push(categoryId);
+        paramIndex++;
+    }
+
+    if (productIds !== undefined) {
+        fields.push(`id = ANY($${paramIndex}::int[])`);
+        values.push(productIds);
         paramIndex++;
     }
 
@@ -139,7 +145,7 @@ const _getProductsQuery = async (filters) => {
 };
 
 const getProducts = async (filters) => {
-    const { query, values } = await _getProductsQuery(filters);
+    const { query, values } = getProductsQuery(filters);
 
     const result = await db.query(query, values);
 
@@ -148,12 +154,36 @@ const getProducts = async (filters) => {
 
 
 const getProductsCount = async (filters) => {
-    const { query, values } = await _getProductsQuery(filters);
+    const { query, values } = getProductsQuery(filters);
 
     const countQuery = `SELECT COUNT(*) FROM (${query}) AS count_query`;
     const result = await db.query(countQuery, values);
     return parseInt(result.rows[0].count);
 }
+
+const decreaseStockQuery = (lineItems) => {
+    const values = [];
+    const requestedProducts = lineItems.map(({ productId, quantity }) => {
+        const productIdParam = values.length + 1;
+        const quantityParam = values.length + 2;
+
+        values.push(productId, quantity);
+
+        return `($${productIdParam}::int, $${quantityParam}::int)`;
+    });
+
+    const query = `
+        UPDATE product AS p
+        SET stock_quantity = p.stock_quantity - requested.quantity
+        FROM (VALUES ${requestedProducts.join(", ")})
+            AS requested(id, quantity)
+        WHERE p.id = requested.id
+          AND p.stock_quantity >= requested.quantity
+        RETURNING p.id, p.stock_quantity;
+    `;
+
+    return { query, values };
+};
 
 module.exports = {
     createProduct,
@@ -161,6 +191,8 @@ module.exports = {
     getProductById,
     updateProduct,
     deleteProduct,
+    getProductsQuery,
     getProducts,
-    getProductsCount
+    getProductsCount,
+    decreaseStockQuery,
 };

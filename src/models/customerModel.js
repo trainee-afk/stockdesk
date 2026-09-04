@@ -23,17 +23,25 @@ const deleteCustomer = async (customerId) => {
     return result.rows[0];
 };
 
-const getCustomerById = async (customerId) => {
+const getCustomerByIdQuery = (customerId) => {
     const query = `
         SELECT * FROM customer
         WHERE id = $1;
     `;
-    const result = await db.query(query, [customerId]);
+    const values = [customerId];
+
+    return { query, values };
+};
+
+const getCustomerById = async (customerId) => {
+    const { query, values } = getCustomerByIdQuery(customerId);
+    const result = await db.query(query, values);
     return result.rows[0];
 }
 
 module.exports = {
     createCustomer,
     deleteCustomer,
+    getCustomerByIdQuery,
     getCustomerById
 };

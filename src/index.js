@@ -11,6 +11,7 @@ const authRoute = require("./routes/authRoute");
 const categoryRoute = require("./routes/categoryRoute");
 const productRoute = require("./routes/productRoute");
 const customerRoute = require("./routes/customerRoute");
+const orderRoute = require("./routes/orderRoute");
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -37,6 +38,7 @@ app.use("/api/auth", authRoute);
 app.use("/api/categories", categoryRoute);
 app.use("/api/products", productRoute);
 app.use("/api/customers", customerRoute);
+app.use("/api/orders", orderRoute);
 
 
 
