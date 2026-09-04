@@ -23,4 +23,14 @@ const handleGetOrders = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { handleCreateOrder, handleGetOrders };
+const handleGetOrderById = asyncHandler(async (req, res) => {
+    const order = await orderService.getOrderById(req.params.id);
+
+    res.status(200).json({
+        success: true,
+        message: "Order retrieved successfully",
+        data: order,
+    });
+});
+
+module.exports = { handleCreateOrder, handleGetOrders, handleGetOrderById };

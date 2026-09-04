@@ -9,6 +9,7 @@ const { authenticateApi } = require("../middlewares/authenticate");
 
 router.post("/", authenticateApi, validatorMiddleware(createOrderSchema), orderController.handleCreateOrder);
 router.get("/", authenticateApi, validatorMiddleware(listOrdersSchema, "query"), orderController.handleGetOrders);
+router.get("/:id", authenticateApi, orderController.handleGetOrderById);
 
 
 module.exports = router;

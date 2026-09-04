@@ -103,9 +103,54 @@ const getOrdersCount = async ({ status, from, to }) => {
     return result.rows[0].total;
 };
 
+const getOrderById = async (orderId) => {
+    const query = `
+        SELECT
+            o.id,
+            o.status,
+            o.total_amount,
+            o.created_at AS order_date,
+            json_build_object(
+                'id', c.id,
+                'name', c.name,
+                'email', c.email,
+                'phone', c.phone,
+                'address', c.address
+            ) AS customer,
+            COALESCE(
+                (
+                    SELECT json_agg(
+                        json_build_object(
+                            'id', oi.id,
+                            'productId', oi.fk_product_id,
+                            'productName', p.name,
+                            'sku', p.sku,
+                            'quantity', oi.quantity,
+                            'unitPrice', oi.unit_price,
+                            'lineTotal', oi.line_total
+                        )
+                        ORDER BY oi.id
+                    )
+                    FROM order_item AS oi
+                    JOIN product AS p ON p.id = oi.fk_product_id
+                    WHERE oi.fk_order_id = o.id
+                ),
+                '[]'::json
+            ) AS items
+        FROM orders AS o
+        JOIN customer AS c ON c.id = o.fk_customer_id
+        WHERE o.id = $1;
+    `;
+    const values = [orderId];
+    const result = await db.query(query, values);
+
+    return result.rows[0];
+};
+
 module.exports = {
     createOrderQuery,
     createOrderItemsQuery,
     getOrders,
     getOrdersCount,
+    getOrderById,
 };

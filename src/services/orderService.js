@@ -140,8 +140,21 @@ const getOrders = async (filters) => {
     };
 };
 
+const getOrderById = async (orderId) => {
+    const order = await orderModel.getOrderById(orderId);
+
+    if (!order) {
+        const error = new Error("Order not found");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    return order;
+};
+
 
 module.exports = {
     createOrder,
     getOrders,
+    getOrderById,
 };
