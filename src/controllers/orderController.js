@@ -46,9 +46,20 @@ const handleUpdateOrderStatus = asyncHandler(async (req, res) => {
     });
 });
 
+const handleGetSalesSummary = asyncHandler(async (req, res) => {
+    const summary = await orderService.getSalesSummary(req.query);
+
+    res.status(200).json({
+        success: true,
+        message: "Sales summary retrieved successfully",
+        data: summary,
+    });
+});
+
 module.exports = {
     handleCreateOrder,
     handleGetOrders,
     handleGetOrderById,
     handleUpdateOrderStatus,
+    handleGetSalesSummary,
 };

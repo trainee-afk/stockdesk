@@ -214,10 +214,15 @@ const updateOrderStatus = async (orderId, newStatus) => {
     }
 };
 
+const getSalesSummary = async (filters) => {
+    return orderModel.getSalesSummary(filters);
+};
+
 
 module.exports = {
     createOrder,
     getOrders,
     getOrderById,
     updateOrderStatus,
+    getSalesSummary,
 };

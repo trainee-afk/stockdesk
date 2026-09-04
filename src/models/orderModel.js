@@ -185,6 +185,33 @@ const updateOrderStatusQuery = (orderId, status) => {
     return { query, values };
 };
 
+const getSalesSummary = async ({ from, to } = {}) => {
+    const values = [];
+    const conditions = ["o.status in ('SHIPPED', 'DELIVERED')"];
+
+    if (from) {
+        values.push(from);
+        conditions.push(`o.created_at >= $${values.length}::date`);
+    }
+
+    if (to) {
+        values.push(to);
+        conditions.push(`o.created_at < ($${values.length}::date + INTERVAL '1 day')`);
+    }
+
+    const query = `
+        SELECT
+            COUNT(*)::INT AS total_orders,
+            COALESCE(SUM(o.total_amount), 0)::DECIMAL(10, 2) AS total_revenue,
+            COALESCE(AVG(o.total_amount), 0)::DECIMAL(10, 2) AS average_order_value
+        FROM orders AS o
+        WHERE ${conditions.join(" AND ")};
+    `;
+    const result = await db.query(query, values);
+
+    return result.rows[0];
+};
+
 module.exports = {
     createOrderQuery,
     createOrderItemsQuery,
@@ -194,4 +221,5 @@ module.exports = {
     getOrderStatusQuery,
     restoreOrderStockQuery,
     updateOrderStatusQuery,
+    getSalesSummary,
 };
