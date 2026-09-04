@@ -13,6 +13,39 @@ const createProduct = async ({ name, sku, price, stock_quantity, fk_category_id 
     return result.rows[0];
 };
 
+const createProductsBulk = async (products) => {
+    if (products.length === 0) {
+        return [];
+    }
+
+    const values = [];
+    const productValues = products.map(
+        ({ name, sku, price, stock_quantity, fk_category_id }) => {
+            const params = [
+                values.length + 1,
+                values.length + 2,
+                values.length + 3,
+                values.length + 4,
+                values.length + 5,
+            ];
+
+            values.push(name, sku, price, stock_quantity, fk_category_id);
+
+            return `($${params[0]}, $${params[1]}, $${params[2]}, $${params[3]}, $${params[4]})`;
+        }
+    );
+
+    const query = `
+        INSERT INTO product
+            (name, sku, price, stock_quantity, fk_category_id)
+        VALUES ${productValues.join(", ")}
+        RETURNING *;
+    `;
+
+    const result = await db.query(query, values);
+    return result.rows;
+};
+
 const getProductBySku = async (sku, filters) => {
     const { excludedProductId } = filters || {};
     const params = [sku];
@@ -218,6 +251,7 @@ const getTopProductsByQuantitySold = async (filters) => {
 
 module.exports = {
     createProduct,
+    createProductsBulk,
     getProductBySku,
     getProductById,
     updateProduct,

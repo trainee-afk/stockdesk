@@ -18,7 +18,7 @@ const productFields = {
         .number({ required_error: "Stock quantity is required" })
         .int({ message: "Stock quantity must be an integer" })
         .nonnegative({ message: "Stock quantity must not be negative" }),
-    fk_category_id: z
+    fk_category_id: z.coerce
         .number({ required_error: "Category is required" })
         .int({ message: "Category ID must be an integer" })
         .positive({ message: "Category ID must be positive" }),

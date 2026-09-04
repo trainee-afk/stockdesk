@@ -77,6 +77,25 @@ const handleGetTopProducts = asyncHandler(async (req, res) => {
     });
 });
 
+
+const handleImportProducts = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            success: false,
+            message: "CSV file is required. Use the form-data field named 'file'.",
+        });
+    }
+
+    const result = await productService.importProductsFromCSV(req.file.buffer);
+
+
+    return res.status(200).json({
+        success: true,
+        message: "Products imported successfully",
+        data: result,
+    });
+});
+
 module.exports = {
     handleCreateProduct,
     handleGetProductById,
@@ -84,5 +103,6 @@ module.exports = {
     handleDeleteProduct,
     handleGetProducts,
     handleGetTopProducts,
-    handleGetLowStockProducts
+    handleGetLowStockProducts,
+    handleImportProducts
 };

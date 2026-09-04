@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const multerUpload = require("../config/multerUpload");
 const productController = require("../controllers/productController");
 const validatorMiddleware = require("../middlewares/validator");
 const { createProductSchema, updateProductSchema, productListQuerySchema } = require("../validators/productValidator");
@@ -16,5 +17,8 @@ router.delete("/:id", authorizeApi("ADMIN"), productController.handleDeleteProdu
 
 //Product Listing
 router.get("/", authenticateApi, validatorMiddleware(productListQuerySchema, "query"), productController.handleGetProducts);
+
+// CSV upload route
+router.post("/import", authorizeApi("ADMIN"), multerUpload.single("file"), productController.handleImportProducts);
 
 module.exports = router;
