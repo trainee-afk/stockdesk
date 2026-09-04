@@ -126,7 +126,22 @@ const createOrder = async (orderData) => {
 
 };
 
+const getOrders = async (filters) => {
+    const orders = await orderModel.getOrders(filters);
+    const total = await orderModel.getOrdersCount(filters);
+
+    return {
+        orders,
+        pagination: {
+            total,
+            page: filters.page,
+            totalPages: Math.ceil(total / filters.limit),
+        },
+    };
+};
+
 
 module.exports = {
     createOrder,
+    getOrders,
 };

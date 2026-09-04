@@ -21,6 +21,24 @@ const createOrderSchema = z.object({
         .min(1, { message: "At least one line item is required" }),
 });
 
+const listOrdersSchema = z.object({
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(20),
+    status: z.enum([
+        "PENDING",
+        "CONFIRMED",
+        "SHIPPED",
+        "DELIVERED",
+        "CANCELLED",
+    ]).optional(),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional(),
+}).refine(
+    ({ from, to }) => !from || !to || from <= to,
+    { message: "from must be before or equal to to", path: ["from"] }
+);
+
 module.exports = {
     createOrderSchema,
+    listOrdersSchema,
 };

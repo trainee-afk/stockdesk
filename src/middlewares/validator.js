@@ -1,9 +1,7 @@
 
-const validator = (schema) => (req, res, next) => {
+const validator = (schema, source = "body") => (req, res, next) => {
 
-    const validationResult = schema.safeParse(req.body);
-
-    console.log(validationResult);
+    const validationResult = schema.safeParse(req[source]);
 
 
     if (!validationResult.success) {
@@ -20,7 +18,7 @@ const validator = (schema) => (req, res, next) => {
         });
     }
 
-    req.body = validationResult.data;
+    req[source] = validationResult.data;
     next();
 };
 
