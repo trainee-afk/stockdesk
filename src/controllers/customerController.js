@@ -13,6 +13,29 @@ const handleCreateCustomer = asyncHandler(async (req, res) => {
 
 });
 
+const handleDeleteCustomer = asyncHandler(async (req, res) => {
+    const customerId = req.params.id;
+    await customerService.deleteCustomer(customerId);
+
+    res.status(200).json({
+        success: true,
+        message: "Customer deleted successfully",
+    });
+});
+
+const handleGetCustomerById = asyncHandler(async (req, res) => {
+    const customerId = req.params.id;
+    const customer = await customerService.getCustomerById(customerId);
+
+    res.status(200).json({
+        success: true,
+        message: "Customer fetched successfully",
+        data: customer,
+    });
+});
+
 module.exports = {
     handleCreateCustomer,
+    handleDeleteCustomer,
+    handleGetCustomerById
 };

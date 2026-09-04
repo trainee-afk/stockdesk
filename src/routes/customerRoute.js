@@ -6,5 +6,7 @@ const { authenticateApi } = require("../middlewares/authenticate");
 const customerController = require("../controllers/customerController");
 
 router.post("/", authenticateApi, validatorMiddleware(createCustomerSchema), customerController.handleCreateCustomer);
+router.delete("/:id", authenticateApi, customerController.handleDeleteCustomer);
+router.get("/:id", authenticateApi, customerController.handleGetCustomerById);
 
 module.exports = router;

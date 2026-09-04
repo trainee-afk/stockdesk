@@ -13,6 +13,27 @@ const createCustomer = async (customerData) => {
     return result.rows[0];
 };
 
+const deleteCustomer = async (customerId) => {
+    const query = `
+        DELETE FROM customer
+        WHERE id = $1
+        RETURNING *;
+    `;
+    const result = await db.query(query, [customerId]);
+    return result.rows[0];
+};
+
+const getCustomerById = async (customerId) => {
+    const query = `
+        SELECT * FROM customer
+        WHERE id = $1;
+    `;
+    const result = await db.query(query, [customerId]);
+    return result.rows[0];
+}
+
 module.exports = {
     createCustomer,
+    deleteCustomer,
+    getCustomerById
 };
