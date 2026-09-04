@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const productController = require("../controllers/productController");
 const validatorMiddleware = require("../middlewares/validator");
-const { createProductSchema, updateProductSchema } = require("../validators/productValidator");
+const { createProductSchema, updateProductSchema, productListQuerySchema } = require("../validators/productValidator");
 const { authorizeApi } = require("../middlewares/authorize");
 const { authenticateApi } = require("../middlewares/authenticate");
 
@@ -15,6 +15,6 @@ router.patch("/:id", authorizeApi("ADMIN"), validatorMiddleware(updateProductSch
 router.delete("/:id", authorizeApi("ADMIN"), productController.handleDeleteProduct);
 
 //Product Listing
-router.get("/", authenticateApi, productController.handleGetProducts);
+router.get("/", authenticateApi, validatorMiddleware(productListQuerySchema, "query"), productController.handleGetProducts);
 
 module.exports = router;

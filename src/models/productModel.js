@@ -86,7 +86,7 @@ const getProductsQuery = (filters) => {
 
     const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order, productIds } = filters || {};
 
-    if (search !== undefined && search.trim() !== "") {
+    if (search && search.trim() !== "") {
         fields.push(`(name ilike $${paramIndex} or sku ilike $${paramIndex})`);
         values.push(`%${search}%`);
         paramIndex++;
@@ -104,10 +104,16 @@ const getProductsQuery = (filters) => {
         paramIndex++;
     }
 
-    if (minPrice !== undefined && maxPrice !== undefined) {
-        fields.push(`price BETWEEN $${paramIndex} AND $${paramIndex + 1}`);
-        values.push(minPrice, maxPrice);
-        paramIndex += 2;
+    if (minPrice !== undefined) {
+        fields.push(`price >= $${paramIndex}`);
+        values.push(minPrice);
+        paramIndex++;
+    }
+
+    if (maxPrice !== undefined) {
+        fields.push(`price <= $${paramIndex}`);
+        values.push(maxPrice);
+        paramIndex++;
     }
 
     if (inStock !== undefined) {
@@ -120,8 +126,8 @@ const getProductsQuery = (filters) => {
 
     let orderByClause = "";
 
-    if (sortBy && order) {
-        orderByClause = `ORDER BY ${sortBy} ${order.toUpperCase()}`;
+    if (sortBy) {
+        orderByClause = `ORDER BY ${sortBy} ${(order || "asc").toUpperCase()}`;
     }
 
     let paginationClause = "";
@@ -154,7 +160,11 @@ const getProducts = async (filters) => {
 
 
 const getProductsCount = async (filters) => {
-    const { query, values } = getProductsQuery(filters);
+    const { query, values } = getProductsQuery({
+        ...filters,
+        page: undefined,
+        limit: undefined,
+    });
 
     const countQuery = `SELECT COUNT(*) FROM (${query}) AS count_query`;
     const result = await db.query(countQuery, values);
