@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order #<%= order.id %> | StockDesk</title>
+    <link rel="stylesheet" href="/css/orderDetail.css">
+</head>
+
+<body>
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Order details</p>
+                <h1>Order #<%= order.id %>
+                </h1>
+                <p>Placed <%= new Date(order.order_date).toLocaleString() %>
+                </p>
+            </div>
+            <a href="/products" class="btn btn-secondary">Back to Products</a>
+        </div>
+
+        <section class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-label">Status</span>
+                <strong class="status">
+                    <%= order.status %>
+                </strong>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Customer</span>
+                <strong>
+                    <%= order.customer.name %>
+                </strong>
+                <span>
+                    <%= order.customer.email %>
+                </span>
+                <% if (order.customer.phone) { %>
+                    <span>
+                        <%= order.customer.phone %>
+                    </span>
+                    <% } %>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Total</span>
+                <strong>₹<%= Number(order.total_amount).toFixed(2) %></strong>
+            </div>
+        </section>
+
+        <section class="table-card">
+            <div class="section-heading">
+                <h2>Line items</h2>
+            </div>
+
+            <% if (order.items.length> 0) { %>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>SKU</th>
+                                <th>Quantity</th>
+                                <th>Unit price</th>
+                                <th>Line total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% order.items.forEach((item)=> { %>
+                                <tr>
+                                    <td><strong>
+                                            <%= item.productName %>
+                                        </strong></td>
+                                    <td><span class="sku">
+                                            <%= item.sku %>
+                                        </span></td>
+                                    <td>
+                                        <%= item.quantity %>
+                                    </td>
+                                    <td>₹<%= Number(item.unitPrice).toFixed(2) %>
+                                    </td>
+                                    <td>₹<%= Number(item.lineTotal).toFixed(2) %>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+                <% } else { %>
+                    <p class="empty-state">This order has no line items.</p>
+                    <% } %>
+        </section>
+    </main>
+</body>
+
+</html>

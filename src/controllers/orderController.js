@@ -1,5 +1,37 @@
 const asyncHandler = require("../middlewares/asyncHandler");
 const orderService = require("../services/orderService");
+const { listOrdersSchema } = require("../validators/orderValidator");
+
+const showOrdersPage = asyncHandler(async (req, res) => {
+    const query = { ...req.query };
+
+    if (query.status === "") {
+        delete query.status;
+    }
+
+    const validationResult = listOrdersSchema.safeParse(query);
+
+    if (!validationResult.success) {
+        return res.redirect("/orders");
+    }
+
+    const filters = validationResult.data;
+    const result = await orderService.getOrders(filters);
+
+    res.render("orders", {
+        orders: result.orders,
+        filters,
+        pagination: result.pagination,
+    });
+});
+
+const showOrderDetailPage = asyncHandler(async (req, res) => {
+    const order = await orderService.getOrderById(req.params.id);
+
+    res.render("orderDetail", {
+        order,
+    });
+});
 
 const handleCreateOrder = asyncHandler(async (req, res) => {
     const { customerId, lineItems } = req.body;
@@ -57,6 +89,8 @@ const handleGetSalesSummary = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+    showOrdersPage,
+    showOrderDetailPage,
     handleCreateOrder,
     handleGetOrders,
     handleGetOrderById,

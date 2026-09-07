@@ -18,6 +18,7 @@ const orderRoute = require("./routes/orderRoute");
 const reportsRoute = require("./routes/reportsRoute");
 const webAuthRoute = require("./routes/webAuthRoute");
 const webProductsRoute = require("./routes/webProductsRoute");
+const webOrderRoute = require("./routes/webOrderRoute");
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -56,6 +57,7 @@ app.use("/api/orders", orderRoute);
 app.use("/api/reports", reportsRoute);
 app.use("/", webAuthRoute);
 app.use("/products", webProductsRoute);
+app.use("/orders", webOrderRoute);
 
 
 

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders | StockDesk</title>
+    <link rel="stylesheet" href="/css/orders.css">
+</head>
+
+<body>
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1>Orders</h1>
+                <p>Review customer orders and their current status.</p>
+            </div>
+            <a href="/products" class="btn btn-secondary">Back to Products</a>
+        </div>
+
+        <form action="/orders" method="GET" class="filter-form">
+            <div class="filter-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="">All statuses</option>
+                    <% ["PENDING", "CONFIRMED" , "SHIPPED" , "DELIVERED" , "CANCELLED" ].forEach((status)=> { %>
+                        <option value="<%= status %>" <%=filters.status===status ? "selected" : "" %>>
+                            <%= status %>
+                        </option>
+                        <% }) %>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Apply filter</button>
+            <a href="/orders" class="btn btn-secondary">Clear</a>
+        </form>
+
+        <% if (orders.length> 0) { %>
+            <div class="table-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Items</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% orders.forEach((order)=> { %>
+                                <tr>
+                                    <td>
+                                        <a href="/orders/<%= order.id %>" class="order-link">
+                                            #<%= order.id %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <%= order.customer_name %>
+                                    </td>
+                                    <td>
+                                        <%= new Date(order.order_date).toLocaleDateString() %>
+                                    </td>
+                                    <td>
+                                        <%= order.item_count %>
+                                    </td>
+                                    <td><span class="status status-<%= order.status.toLowerCase() %>">
+                                            <%= order.status %>
+                                        </span></td>
+                                    <td>₹<%= Number(order.total_amount).toFixed(2) %>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <% } else { %>
+                <div class="table-card empty-state">
+                    <h2>No orders found</h2>
+                    <p>There are no orders matching this status.</p>
+                </div>
+                <% } %>
+
+                    <% if (pagination.totalPages> 1) { %>
+                        <nav class="pagination" aria-label="Order pages">
+                            <% if (pagination.page> 1) { %>
+                                <a class="page-link"
+                                    href="/orders?page=<%= pagination.page - 1 %>&limit=<%= filters.limit %>&status=<%= filters.status || '' %>">Previous</a>
+                                <% } %>
+                                    <span>Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+                                    <% if (pagination.page < pagination.totalPages) { %>
+                                        <a class="page-link"
+                                            href="/orders?page=<%= pagination.page + 1 %>&limit=<%= filters.limit %>&status=<%= filters.status || '' %>">Next</a>
+                                        <% } %>
+                        </nav>
+                        <% } %>
+    </main>
+</body>
+
+</html>
