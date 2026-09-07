@@ -29,6 +29,10 @@ const getCategoryById = async (categoryId) => {
     return category;
 };
 
+const getCategories = async () => {
+    return categoryModel.getCategories();
+};
+
 const updateCategory = async (categoryId, categoryData) => {
     const category = await categoryModel.getCategoryById(categoryId);
 
@@ -67,6 +71,7 @@ const deleteCategory = async (categoryId) => {
 module.exports = {
     createCategory,
     getCategoryById,
+    getCategories,
     updateCategory,
     deleteCategory
 };

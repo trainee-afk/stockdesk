@@ -36,6 +36,14 @@ const getCategoryIds = async () => {
     return result.rows.map(({ id }) => id);
 };
 
+const getCategories = async () => {
+    const result = await db.query(
+        `SELECT id, name FROM category ORDER BY name ASC`
+    );
+
+    return result.rows;
+};
+
 
 const updateCategory = async (categoryId, categoryData) => {
     const fields = [];
@@ -87,6 +95,7 @@ module.exports = {
     getCategoryByName,
     getCategoryById,
     getCategoryIds,
+    getCategories,
     updateCategory,
     deleteCategory
 };

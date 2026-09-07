@@ -1,5 +1,34 @@
 const asyncHandler = require("../middlewares/asyncHandler");
 const productService = require("../services/productService");
+const categoryService = require("../services/categoryService");
+const { productListQuerySchema } = require("../validators/productValidator");
+
+const showProductsPage = asyncHandler(async (req, res) => {
+    const query = { ...req.query };
+
+    if (query.categoryId === "") {
+        delete query.categoryId;  // remove for validation
+    }
+
+    const validationResult = productListQuerySchema.safeParse(query);
+
+    if (!validationResult.success) {
+        return res.redirect("/products"); // if validation fails, redirect to default products page
+    }
+
+    const filters = validationResult.data;
+    const [result, categories] = await Promise.all([
+        productService.getProducts(filters),
+        categoryService.getCategories(),
+    ]);
+
+    res.render("products", {
+        products: result.products,
+        categories,
+        filters,
+        pagination: result.pagination,
+    });
+});
 
 const handleCreateProduct = asyncHandler(async (req, res) => {
     const product = await productService.createProduct(req.body);
@@ -97,6 +126,7 @@ const handleImportProducts = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+    showProductsPage,
     handleCreateProduct,
     handleGetProductById,
     handleUpdateProduct,
