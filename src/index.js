@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const db = require('./config/db');
+const path = require("path");
 const asyncHandler = require("./middlewares/asyncHandler");
 const errorHandler = require("./middlewares/errorHandler");
 const { authenticate } = require("./middlewares/authenticate");
@@ -15,6 +16,7 @@ const productRoute = require("./routes/productRoute");
 const customerRoute = require("./routes/customerRoute");
 const orderRoute = require("./routes/orderRoute");
 const reportsRoute = require("./routes/reportsRoute");
+const webAuthRoute = require("./routes/webAuthRoute");
 
 var corsOptions = {
     origin: process.env.CORS_ORIGIN || "http://localhost:3000",
@@ -23,6 +25,12 @@ var corsOptions = {
 
 const PORT = process.env.PORT || 5000;
 const app = express();
+
+app.set('view engine', 'ejs');
+app.set("views", path.join(__dirname, "views"));
+
+// Static files
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(helmet());
 app.use(morgan("dev"));
@@ -45,6 +53,7 @@ app.use("/api/products", productRoute);
 app.use("/api/customers", customerRoute);
 app.use("/api/orders", orderRoute);
 app.use("/api/reports", reportsRoute);
+app.use("/", webAuthRoute);
 
 
 

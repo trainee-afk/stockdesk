@@ -1,5 +1,48 @@
 const asyncHandler = require("../middlewares/asyncHandler");
 const authService = require("../services/authService");
+const authValidator = require("../validators/authValidator");
+
+const renderLogin = (res, options = {}) => {
+    res.render("login", {
+        error: null,
+        email: "",
+        ...options,
+    });
+};
+
+const showLoginPage = (_, res) => {
+    renderLogin(res);
+};
+
+const handleWebLogin = async (req, res) => {
+    const validationResult = authValidator.loginSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+        return renderLogin(res.status(400), {
+            error: validationResult.error.issues[0]?.message || "Enter your email and password",
+            email: req.body.email || "",
+        });
+    }
+
+    const { email, password } = validationResult.data;
+
+    try {
+        const result = await authService.loginUser(email, password);
+
+        res.cookie("token", result.token, {
+            httpOnly: true,
+            sameSite: "strict",
+            maxAge: 86400000,
+        });
+
+        return res.redirect("/products");
+    } catch (error) {
+        return renderLogin(res.status(401), {
+            error: "Invalid email or password",
+            email,
+        });
+    }
+};
 
 const handleRegisterUser = asyncHandler(async (req, res) => {
 
@@ -20,7 +63,6 @@ const handleLoginUser = asyncHandler(async (req, res) => {
 
     res.cookie("token", result.token, {
         httpOnly: true,
-        secure: true,
         sameSite: "strict",
         maxAge: 86400000, // 24 hours
     });
@@ -42,4 +84,10 @@ const handleGetMe = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { handleRegisterUser, handleLoginUser, handleGetMe };
+module.exports = {
+    showLoginPage,
+    handleWebLogin,
+    handleRegisterUser,
+    handleLoginUser,
+    handleGetMe,
+};
