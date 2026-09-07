@@ -19,9 +19,9 @@
 
             <div class="nav-links">
                 <a href="/products" class="nav-link active">Products</a>
+                <a href="/orders" class="nav-link">Orders</a>
 
                 <% if (user && user.role==="ADMIN" ) { %>
-                    <a href="/orders" class="nav-link">Orders</a>
                     <a href="/products/low-stock" class="nav-link">Low Stock</a>
                     <a href="/products/top-products" class="nav-link">Top Products</a>
                     <% } %>
