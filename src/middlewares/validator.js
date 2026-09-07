@@ -5,7 +5,7 @@ const validator = (schema, source = "body") => (req, res, next) => {
 
 
     if (!validationResult.success) {
-        const issues = validationResult.error?.issues || validationResult.error?.errors || [];
+        const issues = validationResult.error?.issues;
         const formattedErrors = issues.map((err) => ({
             field: err.path?.[0],
             message: err.message,

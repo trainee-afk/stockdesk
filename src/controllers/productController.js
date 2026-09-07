@@ -1,8 +1,10 @@
 const asyncHandler = require("../middlewares/asyncHandler");
 const productService = require("../services/productService");
 const categoryService = require("../services/categoryService");
-const { productListQuerySchema } = require("../validators/productValidator");
+const { productListQuerySchema, createProductSchema } = require("../validators/productValidator");
 
+
+// Web Handlers
 const showProductsPage = asyncHandler(async (req, res) => {
     const query = { ...req.query };
 
@@ -30,6 +32,61 @@ const showProductsPage = asyncHandler(async (req, res) => {
     });
 });
 
+const showCreateProductPage = asyncHandler(async (req, res) => {
+
+    const categories = await categoryService.getCategories();
+
+    res.render("createProduct", {
+        categories,
+        formData: {},
+        errors: {},
+    });
+
+});
+
+const createProduct = asyncHandler(async (req, res) => {
+    const formData = { ...req.body };
+
+    for (const field of ["price", "stock_quantity", "fk_category_id"]) {
+        if (formData[field].trim() === "") {
+            formData[field] = undefined;
+        }
+    }
+
+    const validationResult = createProductSchema.safeParse(formData);
+
+    if (!validationResult.success) {
+        const categories = await categoryService.getCategories();
+        const errors = validationResult.error.issues.reduce((acc, issue) => {
+            acc[issue.path[0]] = issue.message;
+            return acc;
+        }, {});
+
+        return res.status(400).render("createProduct", {
+            categories,
+            formData: req.body,
+            errors,
+        });
+    }
+
+    try {
+        await productService.createProduct(validationResult.data);
+        return res.redirect("/products");
+    } catch (error) {
+        const categories = await categoryService.getCategories();
+
+        return res.status(error.statusCode || 400).render("createProduct", {
+            categories,
+            formData: req.body,
+            errors: {
+                general: error.message || "Unable to create product",
+            },
+        });
+    }
+});
+
+
+// API Handlers
 const handleCreateProduct = asyncHandler(async (req, res) => {
     const product = await productService.createProduct(req.body);
 
@@ -134,5 +191,7 @@ module.exports = {
     handleGetProducts,
     handleGetTopProducts,
     handleGetLowStockProducts,
-    handleImportProducts
+    handleImportProducts,
+    showCreateProductPage,
+    createProduct
 };

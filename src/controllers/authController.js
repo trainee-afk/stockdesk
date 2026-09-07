@@ -2,6 +2,7 @@ const asyncHandler = require("../middlewares/asyncHandler");
 const authService = require("../services/authService");
 const authValidator = require("../validators/authValidator");
 
+// Web Handlers
 const renderLogin = (res, options = {}) => {
     res.render("login", {
         error: null,
@@ -44,6 +45,8 @@ const handleWebLogin = async (req, res) => {
     }
 };
 
+
+// API Handlers
 const handleRegisterUser = asyncHandler(async (req, res) => {
 
     const result = await authService.registerUser(req.body);
