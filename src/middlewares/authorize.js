@@ -12,10 +12,7 @@ const authorizeWeb = (...allowedRoles) => {
         }
 
         if (!checkRole(req.user, allowedRoles)) {
-            return res.status(403).render('errors/403', { // TODO: will see whether to implement error page or redirect to normal page
-                title: 'Access Denied',
-                message: 'You do not have permission to view this page.'
-            });
+            return res.redirect("/products");
         }
 
         next();
