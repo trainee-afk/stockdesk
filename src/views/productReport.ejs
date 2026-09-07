@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %> | StockDesk
+    </title>
+    <link rel="stylesheet" href="/css/products.css">
+</head>
+
+<body>
+    <main class="container">
+        <div class="page-header">
+            <div>
+                <h1>
+                    <%= title %>
+                </h1>
+                <p>
+                    <%= description %>
+                </p>
+            </div>
+            <a href="/products" class="btn btn-secondary">Back to Products</a>
+        </div>
+
+        <form action="<%= filterAction %>" method="GET" class="filters-form">
+            <div class="filter-group">
+                <label for="<%= filterName %>">
+                    <%= filterLabel %>
+                </label>
+                <input type="number" id="<%= filterName %>" name="<%= filterName %>"
+                    min="<%= reportType === 'low-stock' ? 0 : 1 %>" step="1" value="<%= filterValue %>">
+            </div>
+            <button type="submit" class="btn btn-primary">Apply filter</button>
+        </form>
+
+        <%- include("partials/reportProductTable", { products, reportType }) %>
+    </main>
+</body>
+
+</html>

@@ -2,6 +2,10 @@ const asyncHandler = require("../middlewares/asyncHandler");
 const productService = require("../services/productService");
 const categoryService = require("../services/categoryService");
 const { productListQuerySchema, createProductSchema } = require("../validators/productValidator");
+const {
+    getLowStockProductsSchema,
+    getTopProductsSchema,
+} = require("../validators/reportsValidator");
 
 
 // Web Handlers
@@ -42,6 +46,55 @@ const showCreateProductPage = asyncHandler(async (req, res) => {
         errors: {},
     });
 
+});
+
+const showLowStockProductsPage = asyncHandler(async (req, res) => {
+    const threshold = req.query.threshold || "10";
+    const validationResult = getLowStockProductsSchema.safeParse({ threshold });
+
+    if (!validationResult.success) {
+        return res.redirect("/products/low-stock");
+    }
+
+
+    const products = await productService.getLowStockProducts(
+        validationResult.data.threshold
+    );
+
+    res.render("productReport", {
+        reportType: "low-stock",
+        title: "Low Stock Products",
+        description: "Products at or below the selected stock level.",
+        filterName: "threshold",
+        filterLabel: "Stock level",
+        filterValue: validationResult.data.threshold,
+        filterAction: "/products/low-stock",
+        products,
+    });
+});
+
+const showTopProductsPage = asyncHandler(async (req, res) => {
+    const limit = req.query.limit || "10";
+    const validationResult = getTopProductsSchema.safeParse({ limit });
+
+    if (!validationResult.success) {
+        return res.redirect("/products/top-products");
+    }
+
+    const products = await productService.getTopProductsByQuantitySold(
+        validationResult.data.limit
+    );
+
+    res.render("productReport", {
+        reportType: "top-products",
+        title: "Top Products",
+        description: "Best-selling products by quantity sold.",
+        filterName: "limit",
+        filterLabel: "Number of products",
+        filterValue: validationResult.data.limit,
+        filterAction: "/products/top-products",
+        products,
+    });
 });
 
 const createProduct = asyncHandler(async (req, res) => {
@@ -193,5 +246,7 @@ module.exports = {
     handleGetLowStockProducts,
     handleImportProducts,
     showCreateProductPage,
-    createProduct
+    createProduct,
+    showLowStockProductsPage,
+    showTopProductsPage
 };
