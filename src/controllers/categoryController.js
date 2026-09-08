@@ -2,8 +2,7 @@ const asyncHandler = require("../middlewares/asyncHandler");
 const categoryService = require("../services/categoryService");
 
 const handleCreateCategory = asyncHandler(async (req, res) => {
-    const category = await categoryService.createCategory(req.body);
-
+    const category = await categoryService.createCategory(req.body, req.user.id);
     res.status(201).json({
         success: true,
         message: "Category created successfully",
@@ -24,7 +23,7 @@ const handleGetCategoryById = asyncHandler(async (req, res) => {
 
 const handleUpdateCategory = asyncHandler(async (req, res) => {
     const categoryId = req.params.id;
-    const updatedCategory = await categoryService.updateCategory(categoryId, req.body);
+    const updatedCategory = await categoryService.updateCategory(categoryId, req.body, req.user.id);
 
     res.status(200).json({
         success: true,
@@ -35,7 +34,7 @@ const handleUpdateCategory = asyncHandler(async (req, res) => {
 
 const handleDeleteCategory = asyncHandler(async (req, res) => {
     const categoryId = req.params.id;
-    const deletedCategory = await categoryService.deleteCategory(categoryId);
+    const deletedCategory = await categoryService.deleteCategory(categoryId, req.user.id);
 
     res.status(200).json({
         success: true,

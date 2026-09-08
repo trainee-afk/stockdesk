@@ -22,8 +22,7 @@ const updateCategorySchema = z.object({
         .trim()
         .min(2, { message: 'Category name must be at least 2 characters long' })
         .max(255, { message: 'Category name must not exceed 255 characters' })
-        .optional()
-        .nullable(),
+        .optional(),
 
     description: z
         .string()

@@ -1,13 +1,13 @@
 const db = require("../config/db");
 
-const createCategory = async ({ name, description }) => {
+const createCategory = async ({ name, description }, createdBy = null) => {
     const result = await db.query(
         `
-            INSERT INTO category (name, description)
-            VALUES ($1, $2)
+            INSERT INTO category (name, description, created_by, hist_id, is_deleted)
+            VALUES ($1, $2, $3, NULL, FALSE)
             RETURNING *
         `,
-        [name, description]
+        [name, description, createdBy]
     );
 
     return result.rows[0];
@@ -15,7 +15,7 @@ const createCategory = async ({ name, description }) => {
 
 const getCategoryByName = async (name) => {
     const result = await db.query(
-        `SELECT * FROM category WHERE LOWER(name) = LOWER($1)`,
+        `SELECT * FROM category WHERE LOWER(name) = LOWER($1) AND hist_id IS NULL AND is_deleted = FALSE`,
         [name]
     );
 
@@ -24,28 +24,91 @@ const getCategoryByName = async (name) => {
 
 const getCategoryById = async (categoryId) => {
     const result = await db.query(
-        `SELECT * FROM category WHERE id = $1`,
+        `SELECT *
+         FROM category
+         WHERE id = $1
+           AND hist_id IS NULL
+           AND is_deleted = FALSE`,
         [categoryId]
     );
 
     return result.rows[0];
 };
 
+const getCategoryForUpdateQuery = (categoryId) => ({
+    query: `
+        SELECT *
+        FROM category
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        FOR UPDATE
+    `,
+    values: [categoryId],
+});
+
+const getCategoryProductsQuery = (categoryId) => ({
+    query: `
+        SELECT 1
+        FROM product
+        WHERE fk_category_id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        LIMIT 1
+    `,
+    values: [categoryId],
+});
+
+const createCategoryHistoryQuery = (categoryId) => ({
+    query: `
+        INSERT INTO category (
+            name,
+            description,
+            created_by,
+            created_at,
+            hist_id,
+            is_deleted
+        )
+        SELECT
+            name,
+            description,
+            created_by,
+            created_at,
+            id,
+            is_deleted
+        FROM category
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        RETURNING *
+    `,
+    values: [categoryId],
+});
+
 const getCategoryIds = async () => {
-    const result = await db.query(`SELECT id FROM category`);
+    const result = await db.query(
+        `SELECT id
+         FROM category
+         WHERE hist_id IS NULL
+           AND is_deleted = FALSE`
+    );
     return result.rows.map(({ id }) => id);
 };
 
 const getCategories = async () => {
     const result = await db.query(
-        `SELECT id, name FROM category ORDER BY name ASC`
+                `SELECT id, name
+                 FROM category
+                 WHERE hist_id IS NULL
+                     AND is_deleted = FALSE
+                 ORDER BY name ASC`
     );
 
     return result.rows;
 };
 
 
-const updateCategory = async (categoryId, categoryData) => {
+const updateCategoryQuery = (categoryId, categoryData, updatedBy = null) => {
     const fields = [];
     const values = [];
     let paramIndex = 1;
@@ -66,36 +129,49 @@ const updateCategory = async (categoryId, categoryData) => {
         return null;
     }
 
+    fields.push(`created_by = $${paramIndex}`);
+    values.push(updatedBy);
+    paramIndex++;
+    fields.push("created_at = NOW()");
+
     values.push(categoryId);
 
-    const result = await db.query(
-        `
+    return {
+        query: `
             UPDATE category
             SET ${fields.join(", ")}
             WHERE id = $${paramIndex}
+              AND hist_id IS NULL
+              AND is_deleted = FALSE
             RETURNING *
         `,
-        values
-    );
-
-    return result.rows[0];
+        values,
+    };
 };
 
-const deleteCategory = async (categoryId) => {
-    const result = await db.query(
-        `DELETE FROM category WHERE id = $1 RETURNING *`,
-        [categoryId]
-    );
-
-    return result.rows[0];
-};
+const deleteCategoryQuery = (categoryId, deletedBy = null) => ({
+    query: `
+        UPDATE category
+        SET is_deleted = TRUE,
+            created_by = $2,
+            created_at = NOW()
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        RETURNING *
+    `,
+    values: [categoryId, deletedBy],
+});
 
 module.exports = {
     createCategory,
     getCategoryByName,
     getCategoryById,
+    getCategoryForUpdateQuery,
+    getCategoryProductsQuery,
+    createCategoryHistoryQuery,
     getCategoryIds,
     getCategories,
-    updateCategory,
-    deleteCategory
+    updateCategoryQuery,
+    deleteCategoryQuery,
 };
