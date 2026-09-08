@@ -30,7 +30,7 @@ const loginUser = async (email, password) => {
         throw new Error("Invalid email or password");
     }
 
-    const token = jwt.sign({ email: user.email, role: user.role }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, {
         expiresIn: "24h",
     });
 

@@ -14,7 +14,7 @@ const registerUser = async (userData) => {
 const getUserByEmail = async (email) => {
 
     const result = await db.query(
-        "select email, password, role from users where email = $1",
+        "select id, email, password, role from users where email = $1",
         [email]
     );
 
