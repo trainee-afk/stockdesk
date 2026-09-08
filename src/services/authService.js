@@ -4,7 +4,13 @@ const jwt = require("jsonwebtoken");
 
 const registerUser = async (userData) => {
 
-    const { password } = userData;
+    const { email, password } = userData;
+    const user = await authModel.getUserByEmail(email);
+    if (user) {
+        const error = new Error("User already exists");
+        error.statusCode = 409;
+        throw new Error("User already exists");
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
     userData.password = hashedPassword;
 
