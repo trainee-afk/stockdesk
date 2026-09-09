@@ -3,7 +3,7 @@ const customerService = require("../services/customerService");
 
 const handleCreateCustomer = asyncHandler(async (req, res) => {
 
-    const customer = await customerService.createCustomer(req.body);
+    const customer = await customerService.createCustomer(req.body, req.user.id);
 
     res.status(201).json({
         success: true,
@@ -15,7 +15,7 @@ const handleCreateCustomer = asyncHandler(async (req, res) => {
 
 const handleDeleteCustomer = asyncHandler(async (req, res) => {
     const customerId = req.params.id;
-    await customerService.deleteCustomer(customerId);
+    await customerService.deleteCustomer(customerId, req.user.id);
 
     res.status(200).json({
         success: true,
