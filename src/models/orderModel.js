@@ -38,7 +38,7 @@ const createOrderItemsQuery = (orderId, lineItems, createdBy = null) => {
 
 const _getOrderFilters = ({ status, from, to } = {}) => {
     const values = [];
-    const conditions = [];
+    const conditions = ["o.hist_id IS NULL", "o.is_deleted = FALSE"];
 
     if (status) {
         values.push(status);
@@ -80,7 +80,10 @@ const getOrders = async ({ page, limit, status, from, to }) => {
             COUNT(oi.id)::INT AS item_count
         FROM orders AS o
         JOIN customer AS c ON c.id = o.fk_customer_id
+            AND c.hist_id IS NULL
         LEFT JOIN order_item AS oi ON oi.fk_order_id = o.id
+            AND oi.hist_id IS NULL
+            AND oi.is_deleted = FALSE
         ${filters.whereClause}
         GROUP BY o.id, c.name
         ORDER BY o.created_at DESC, o.id DESC
@@ -134,13 +137,19 @@ const getOrderById = async (orderId) => {
                     )
                     FROM order_item AS oi
                     JOIN product AS p ON p.id = oi.fk_product_id
+                            AND p.hist_id IS NULL
                     WHERE oi.fk_order_id = o.id
+                        AND oi.hist_id IS NULL
+                        AND oi.is_deleted = FALSE
                 ),
                 '[]'::json
             ) AS items
         FROM orders AS o
-        JOIN customer AS c ON c.id = o.fk_customer_id
-        WHERE o.id = $1;
+            JOIN customer AS c ON c.id = o.fk_customer_id
+                    AND c.hist_id IS NULL
+            WHERE o.id = $1
+                AND o.hist_id IS NULL
+                AND o.is_deleted = FALSE;
     `;
     const values = [orderId];
     const result = await db.query(query, values);
