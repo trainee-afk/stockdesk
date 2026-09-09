@@ -216,7 +216,11 @@ const updateOrderStatusQuery = (orderId, status, updatedBy = null) => {
 
 const getSalesSummary = async ({ from, to } = {}) => {
     const values = [];
-    const conditions = ["o.status in ('SHIPPED', 'DELIVERED')"];
+    const conditions = [
+        "o.status IN ('SHIPPED', 'DELIVERED')",
+        "o.hist_id IS NULL",
+        "o.is_deleted = FALSE",
+    ];
 
     if (from) {
         values.push(from);
