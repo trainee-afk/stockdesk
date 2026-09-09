@@ -312,6 +312,8 @@ const getTopProductsByQuantitySold = async (filters) => {
         FROM order_item AS oi
         JOIN orders AS o ON oi.fk_order_id = o.id and o.status IN ('DELIVERED', 'SHIPPED')
         JOIN product AS p ON oi.fk_product_id = p.id
+            AND p.hist_id IS NULL
+            AND p.is_deleted = FALSE
         GROUP BY p.id
         ORDER BY sold_quantity DESC
         LIMIT $1
