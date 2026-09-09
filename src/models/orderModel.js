@@ -161,7 +161,9 @@ const getOrderStatusQuery = (orderId) => {
     const query = `
         SELECT id, status
         FROM orders
-        WHERE id = $1
+                WHERE id = $1
+                    AND hist_id IS NULL
+                    AND is_deleted = FALSE
         FOR UPDATE;
     `;
     const values = [orderId];
@@ -169,28 +171,45 @@ const getOrderStatusQuery = (orderId) => {
     return { query, values };
 };
 
-const restoreOrderStockQuery = (orderId) => {
-    const query = `
-        UPDATE product AS p
-        SET stock_quantity = p.stock_quantity + oi.quantity
-        FROM order_item AS oi
-        WHERE oi.fk_order_id = $1
-          AND p.id = oi.fk_product_id
-        RETURNING p.id, p.stock_quantity;
-    `;
-    const values = [orderId];
+const createOrderHistoryQuery = (orderId) => ({
+    query: `
+        INSERT INTO orders (
+            fk_customer_id, status, total_amount, created_by, created_at, hist_id, is_deleted
+        )
+        SELECT
+            fk_customer_id, status, total_amount, created_by, created_at, id, is_deleted
+        FROM orders
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        RETURNING *
+    `,
+    values: [orderId],
+});
 
-    return { query, values };
-};
+const getOrderProductQuantitiesQuery = (orderId) => ({
+    query: `
+        SELECT fk_product_id AS "productId", quantity
+        FROM order_item
+        WHERE fk_order_id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+    `,
+    values: [orderId],
+});
 
-const updateOrderStatusQuery = (orderId, status) => {
+const updateOrderStatusQuery = (orderId, status, updatedBy = null) => {
     const query = `
         UPDATE orders
-        SET status = $1
-        WHERE id = $2
+        SET status = $1,
+            created_by = $2,
+            created_at = NOW()
+        WHERE id = $3
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
         RETURNING *;
     `;
-    const values = [status, orderId];
+    const values = [status, updatedBy, orderId];
 
     return { query, values };
 };
@@ -229,7 +248,8 @@ module.exports = {
     getOrdersCount,
     getOrderById,
     getOrderStatusQuery,
-    restoreOrderStockQuery,
+    createOrderHistoryQuery,
+    getOrderProductQuantitiesQuery,
     updateOrderStatusQuery,
     getSalesSummary,
 };

@@ -71,7 +71,8 @@ const handleGetOrderById = asyncHandler(async (req, res) => {
 const handleUpdateOrderStatus = asyncHandler(async (req, res) => {
     const order = await orderService.updateOrderStatus(
         req.params.id,
-        req.body.status
+        req.body.status,
+        req.user.id
     );
 
     res.status(200).json({

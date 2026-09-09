@@ -361,6 +361,35 @@ const decreaseStockQuery = (lineItems, updatedBy = null) => {
     return { query, values };
 };
 
+const restoreStockQuery = (lineItems, updatedBy = null) => {
+    const values = [];
+    const requestedProducts = lineItems.map(({ productId, quantity }) => {
+        const productIdParam = values.length + 1;
+        const quantityParam = values.length + 2;
+        values.push(productId, quantity);
+        return `($${productIdParam}::int, $${quantityParam}::int)`;
+    });
+
+    const updatedByParam = values.length + 1;
+    values.push(updatedBy);
+
+    return {
+        query: `
+            UPDATE product AS p
+            SET stock_quantity = p.stock_quantity + requested.quantity,
+                created_by = $${updatedByParam},
+                created_at = NOW()
+            FROM (VALUES ${requestedProducts.join(", ")})
+                AS requested(id, quantity)
+            WHERE p.id = requested.id
+              AND p.hist_id IS NULL
+              AND p.is_deleted = FALSE
+            RETURNING p.id, p.stock_quantity;
+        `,
+        values,
+    };
+};
+
 
 const getTopProductsByQuantitySold = async (filters) => {
     const { limit } = filters || {};
@@ -397,5 +426,6 @@ module.exports = {
     getProducts,
     getProductsCount,
     decreaseStockQuery,
+    restoreStockQuery,
     getTopProductsByQuantitySold
 };

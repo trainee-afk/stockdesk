@@ -149,6 +149,23 @@ const decreaseStock = async (client, lineItems, updatedBy = null) => {
     return stockResult.rows;
 };
 
+const restoreStock = async (client, lineItems, updatedBy = null) => {
+    const productIds = lineItems.map(({ productId }) => productId);
+    const historyQuery = productModel.createProductsHistoryQuery(productIds);
+    await client.query(historyQuery.query, historyQuery.values);
+
+    const restoreQuery = productModel.restoreStockQuery(lineItems, updatedBy);
+    const stockResult = await client.query(restoreQuery.query, restoreQuery.values);
+
+    if (stockResult.rowCount !== lineItems.length) {
+        const error = new Error("Unable to restore product stock");
+        error.statusCode = 409;
+        throw error;
+    }
+
+    return stockResult.rows;
+};
+
 
 const getProducts = async (filters) => {
 
@@ -277,6 +294,7 @@ module.exports = {
     updateProduct,
     deleteProduct,
     decreaseStock,
+    restoreStock,
     getProducts,
     getTopProductsByQuantitySold,
     getLowStockProducts,

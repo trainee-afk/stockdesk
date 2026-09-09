@@ -149,7 +149,7 @@ const getOrderById = async (orderId) => {
     return order;
 };
 
-const updateOrderStatus = async (orderId, newStatus) => {
+const updateOrderStatus = async (orderId, newStatus, updatedBy = null) => {
     const allowedTransitions = {
         PENDING: ["CONFIRMED", "CANCELLED"],
         CONFIRMED: ["SHIPPED", "CANCELLED"],
@@ -183,17 +183,19 @@ const updateOrderStatus = async (orderId, newStatus) => {
             throw error;
         }
 
+        const orderHistoryQuery = orderModel.createOrderHistoryQuery(orderId);
+        await client.query(orderHistoryQuery.query, orderHistoryQuery.values);
+
         if (newStatus === "CANCELLED") {
-            const restoreStockQuery = orderModel.restoreOrderStockQuery(orderId);
-            await client.query(
-                restoreStockQuery.query,
-                restoreStockQuery.values
-            );
+            const quantitiesQuery = orderModel.getOrderProductQuantitiesQuery(orderId);
+            const quantitiesResult = await client.query(quantitiesQuery.query, quantitiesQuery.values);
+            await productService.restoreStock(client, quantitiesResult.rows, updatedBy);
         }
 
         const updateStatusQuery = orderModel.updateOrderStatusQuery(
             orderId,
-            newStatus
+            newStatus,
+            updatedBy
         );
         const updatedOrderResult = await client.query(
             updateStatusQuery.query,
