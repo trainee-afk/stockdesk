@@ -97,11 +97,11 @@ const getCategoryIds = async () => {
 
 const getCategories = async () => {
     const result = await db.query(
-                `SELECT id, name
-                 FROM category
-                 WHERE hist_id IS NULL
-                     AND is_deleted = FALSE
-                 ORDER BY name ASC`
+        `SELECT id, name
+        FROM category
+        WHERE hist_id IS NULL
+            AND is_deleted = FALSE
+        ORDER BY name ASC`
     );
 
     return result.rows;
