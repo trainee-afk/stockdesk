@@ -1,19 +1,19 @@
 const db = require("../config/db");
 
-const createProduct = async ({ name, sku, price, stock_quantity, fk_category_id }) => {
+const createProduct = async ({ name, sku, price, stock_quantity, fk_category_id }, createdBy) => {
     const result = await db.query(
         `
-            INSERT INTO product (name, sku, price, stock_quantity, fk_category_id)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO product (name, sku, price, stock_quantity, fk_category_id, created_by)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `,
-        [name, sku, price, stock_quantity, fk_category_id]
+        [name, sku, price, stock_quantity, fk_category_id, createdBy]
     );
 
     return result.rows[0];
 };
 
-const createProductsBulk = async (products) => {
+const createProductsBulk = async (products, createdBy = null) => {
     if (products.length === 0) {
         return [];
     }
@@ -27,17 +27,18 @@ const createProductsBulk = async (products) => {
                 values.length + 3,
                 values.length + 4,
                 values.length + 5,
+                values.length + 6,
             ];
 
-            values.push(name, sku, price, stock_quantity, fk_category_id);
+            values.push(name, sku, price, stock_quantity, fk_category_id, createdBy);
 
-            return `($${params[0]}, $${params[1]}, $${params[2]}, $${params[3]}, $${params[4]})`;
+            return `(${params[0]}, ${params[1]}, ${params[2]}, ${params[3]}, ${params[4]}, ${params[5]}, NULL, FALSE)`;
         }
     );
 
     const query = `
         INSERT INTO product
-            (name, sku, price, stock_quantity, fk_category_id)
+            (name, sku, price, stock_quantity, fk_category_id, created_by, hist_id, is_deleted)
         VALUES ${productValues.join(", ")}
         RETURNING *;
     `;
@@ -47,74 +48,146 @@ const createProductsBulk = async (products) => {
 };
 
 const getProductBySku = async (sku, filters) => {
-    const { excludedProductId } = filters || {};
-    const params = [sku];
-    if (excludedProductId) params.push(excludedProductId);
-
-    const result = await db.query(
-        `SELECT * FROM product WHERE LOWER(sku) = LOWER($1) ${excludedProductId ? 'AND id != $2' : ''}`,
-        params
-    );
+    const skuQuery = getProductBySkuQuery(sku, filters);
+    const result = await db.query(skuQuery.query, skuQuery.values);
 
     return result.rows[0];
+};
+
+const getProductBySkuQuery = (sku, filters) => {
+    const { excludedProductId } = filters || {};
+    const values = [sku];
+    let excludedProductClause = "";
+
+    if (excludedProductId !== undefined) {
+        values.push(excludedProductId);
+        excludedProductClause = "AND id != $2";
+    }
+
+    return {
+        query: `
+            SELECT *
+            FROM product
+            WHERE LOWER(sku) = LOWER($1)
+              ${excludedProductClause}
+              AND hist_id IS NULL
+              AND is_deleted = FALSE
+        `,
+        values,
+    };
 };
 
 const getProductById = async (productId) => {
     const result = await db.query(
-        `SELECT * FROM product WHERE id = $1`,
+        `SELECT * FROM product WHERE id = $1 and hist_id is null and is_deleted = false`,
         [productId]
     );
 
     return result.rows[0];
 };
 
-const updateProduct = async (productId, productData) => {
+const getProductForUpdateQuery = (productId) => ({
+    query: `
+        SELECT *
+        FROM product
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        FOR UPDATE
+    `,
+    values: [productId],
+});
+
+const createProductHistoryQuery = (productId) => ({
+    query: `
+        INSERT INTO product (
+            name,
+            sku,
+            price,
+            stock_quantity,
+            fk_category_id,
+            created_by,
+            created_at,
+            hist_id,
+            is_deleted
+        )
+        SELECT
+            name,
+            sku,
+            price,
+            stock_quantity,
+            fk_category_id,
+            created_by,
+            created_at,
+            id,
+            is_deleted
+        FROM product
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        RETURNING *
+    `,
+    values: [productId],
+});
+
+const updateProductQuery = (productId, productData, updatedBy = null) => {
     const fields = [];
     const values = [];
     let paramIndex = 1;
 
-    for (const [key, value] of Object.entries(productData)) {
-        fields.push(`${key} = $${paramIndex}`);
-        values.push(value);
-        paramIndex++;
+    for (const key of ["name", "sku", "price", "stock_quantity", "fk_category_id"]) {
+        if (productData[key] === undefined) {
+            continue;
+        }
 
+        fields.push(`${key} = $${paramIndex}`);
+        values.push(productData[key]);
+        paramIndex++;
     }
 
     if (fields.length === 0) {
-        const error = new Error("No fields provided for update");
-        error.statusCode = 400;
-        throw error;
+        return null;
     }
+
+    fields.push(`created_by = $${paramIndex}`);
+    values.push(updatedBy);
+    paramIndex++;
+    fields.push("created_at = NOW()");
 
     values.push(productId);
 
-    const result = await db.query(
-        `
+    return {
+        query: `
             UPDATE product
             SET ${fields.join(", ")}
             WHERE id = $${paramIndex}
+              AND hist_id IS NULL
+              AND is_deleted = FALSE
             RETURNING *
         `,
-        values
-    );
-
-    return result.rows[0];
+        values,
+    };
 };
 
-const deleteProduct = async (productId) => {
-    const result = await db.query(
-        `DELETE FROM product WHERE id = $1 RETURNING *`,
-        [productId]
-    );
-
-    return result.rows[0];
-};
+const deleteProductQuery = (productId, deletedBy = null) => ({
+    query: `
+        UPDATE product
+        SET is_deleted = TRUE,
+            created_by = $2,
+            created_at = NOW()
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        RETURNING *
+    `,
+    values: [productId, deletedBy],
+});
 
 
 const getProductsQuery = (filters) => {
 
     let paramIndex = 1;
-    const fields = [];
+    const fields = ["hist_id IS NULL", "is_deleted = FALSE"];
     const values = [];
 
     const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order, productIds, stock_threshold } = filters || {};
@@ -160,7 +233,7 @@ const getProductsQuery = (filters) => {
         paramIndex++;
     }
 
-    const whereClause = fields.length > 0 ? `WHERE ${fields.join(" AND ")}` : "";
+    const whereClause = `WHERE ${fields.join(" AND ")}`;
 
     let orderByClause = "";
     if (sortBy) {
@@ -253,9 +326,12 @@ module.exports = {
     createProduct,
     createProductsBulk,
     getProductBySku,
+    getProductBySkuQuery,
     getProductById,
-    updateProduct,
-    deleteProduct,
+    getProductForUpdateQuery,
+    createProductHistoryQuery,
+    updateProductQuery,
+    deleteProductQuery,
     getProductsQuery,
     getProducts,
     getProductsCount,

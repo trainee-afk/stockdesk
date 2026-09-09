@@ -23,17 +23,22 @@ const getCategoryByName = async (name) => {
 };
 
 const getCategoryById = async (categoryId) => {
-    const result = await db.query(
-        `SELECT *
-         FROM category
-         WHERE id = $1
-           AND hist_id IS NULL
-           AND is_deleted = FALSE`,
-        [categoryId]
-    );
+    const categoryQuery = getCategoryByIdQuery(categoryId);
+    const result = await db.query(categoryQuery.query, categoryQuery.values);
 
     return result.rows[0];
 };
+
+const getCategoryByIdQuery = (categoryId) => ({
+    query: `
+        SELECT *
+        FROM category
+        WHERE id = $1
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+    `,
+    values: [categoryId],
+});
 
 const getCategoryForUpdateQuery = (categoryId) => ({
     query: `
@@ -167,6 +172,7 @@ module.exports = {
     createCategory,
     getCategoryByName,
     getCategoryById,
+    getCategoryByIdQuery,
     getCategoryForUpdateQuery,
     getCategoryProductsQuery,
     createCategoryHistoryQuery,

@@ -1,11 +1,12 @@
 const productModel = require("../models/productModel");
 const categoryModel = require("../models/categoryModel");
+const db = require("../config/db");
 const { createProductSchema } = require("../validators/productValidator");
 const { Readable } = require("stream");
 const csv = require("csv-parser");
 
 
-const createProduct = async (productData) => {
+const createProduct = async (productData, createdBy) => {
     const existingProduct = await productModel.getProductBySku(productData.sku);
 
     if (existingProduct) {
@@ -21,7 +22,7 @@ const createProduct = async (productData) => {
         throw error;
     }
 
-    return productModel.createProduct(productData);
+    return productModel.createProduct(productData, createdBy);
 };
 
 const getProductById = async (productId) => {
@@ -36,42 +37,96 @@ const getProductById = async (productId) => {
     return product;
 };
 
-const _checkSKUConflict = async (productId, sku) => {
+const updateProduct = async (productId, productData, updatedBy = null) => {
+    const client = await db.connect();
 
-    const existingProduct = await productModel.getProductBySku(sku, { excludedProductId: productId });
+    try {
+        await client.query("BEGIN");
 
-    if (existingProduct) {
-        const error = new Error("Product SKU already exists");
-        error.statusCode = 409;
-        throw error;
-    }
+        const currentQuery = productModel.getProductForUpdateQuery(productId);
+        const currentResult = await client.query(currentQuery.query, currentQuery.values);
 
-    return true;
-
-}
-
-const updateProduct = async (productId, productData) => {
-    await getProductById(productId);
-
-    if (productData.sku !== undefined) {
-        await _checkSKUConflict(productId, productData.sku);
-    }
-
-    if (productData.fk_category_id) {
-        const category = await categoryModel.getCategoryById(productData.fk_category_id);
-        if (!category) {
-            const error = new Error("Category not found");
+        if (currentResult.rowCount === 0) {
+            const error = new Error("Product not found");
             error.statusCode = 404;
             throw error;
         }
-    }
 
-    return productModel.updateProduct(productId, productData);
+        if (productData.sku !== undefined) {
+            const skuQuery = productModel.getProductBySkuQuery(
+                productData.sku, { excludedProductId: productId }
+            );
+            const existingProduct = await client.query(skuQuery.query, skuQuery.values);
+
+            if (existingProduct.rowCount > 0) {
+                const error = new Error("Product SKU already exists");
+                error.statusCode = 409;
+                throw error;
+            }
+        }
+
+        if (productData.fk_category_id !== undefined) {
+            const categoryQuery = categoryModel.getCategoryByIdQuery(productData.fk_category_id);
+            const categoryResult = await client.query(categoryQuery.query, categoryQuery.values);
+
+            if (categoryResult.rowCount === 0) {
+                const error = new Error("Category not found");
+                error.statusCode = 404;
+                throw error;
+            }
+        }
+
+        const historyQuery = productModel.createProductHistoryQuery(productId);
+        await client.query(historyQuery.query, historyQuery.values);
+
+        const updateQuery = productModel.updateProductQuery(productId, productData, updatedBy);
+        if (!updateQuery) {
+            const error = new Error("No fields provided for update");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const updatedResult = await client.query(updateQuery.query, updateQuery.values);
+
+        await client.query("COMMIT");
+        return updatedResult.rows[0];
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
-const deleteProduct = async (productId) => {
-    await getProductById(productId);
-    return productModel.deleteProduct(productId);
+const deleteProduct = async (productId, deletedBy = null) => {
+    const client = await db.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const currentQuery = productModel.getProductForUpdateQuery(productId);
+        const currentResult = await client.query(currentQuery.query, currentQuery.values);
+
+        if (currentResult.rowCount === 0) {
+            const error = new Error("Product not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const historyQuery = productModel.createProductHistoryQuery(productId);
+        await client.query(historyQuery.query, historyQuery.values);
+
+        const deleteQuery = productModel.deleteProductQuery(productId, deletedBy);
+        const deletedResult = await client.query(deleteQuery.query, deleteQuery.values);
+
+        await client.query("COMMIT");
+        return deletedResult.rows[0];
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
 
@@ -121,7 +176,7 @@ const _parseCSVData = (csvData) => {
     });
 };
 
-const importProductsFromCSV = async (csvData) => {
+const importProductsFromCSV = async (csvData, createdBy = null) => {
 
     const products = await _parseCSVData(csvData);
     const errors = [];
@@ -177,10 +232,12 @@ const importProductsFromCSV = async (csvData) => {
     let importedProducts = [];
     if (validProducts.length > 0) {
         try {
-            importedProducts = await productModel.createProductsBulk(validProducts);
+            importedProducts = await productModel.createProductsBulk(validProducts, createdBy);
         } catch (error) {
             if (error.code === "23505") {
-                throw new Error("A duplicate SKU was detected while importing products");
+                const duplicateError = new Error("A duplicate SKU was detected while importing products");
+                duplicateError.statusCode = 409;
+                throw duplicateError;
             }
 
             throw error;

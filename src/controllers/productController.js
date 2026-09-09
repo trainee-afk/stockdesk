@@ -141,7 +141,7 @@ const createProduct = asyncHandler(async (req, res) => {
 
 // API Handlers
 const handleCreateProduct = asyncHandler(async (req, res) => {
-    const product = await productService.createProduct(req.body);
+    const product = await productService.createProduct(req.body, req.user.id);
 
     res.status(201).json({
         success: true,
@@ -161,7 +161,7 @@ const handleGetProductById = asyncHandler(async (req, res) => {
 });
 
 const handleUpdateProduct = asyncHandler(async (req, res) => {
-    const product = await productService.updateProduct(req.params.id, req.body);
+    const product = await productService.updateProduct(req.params.id, req.body, req.user.id);
 
     res.status(200).json({
         success: true,
@@ -171,7 +171,7 @@ const handleUpdateProduct = asyncHandler(async (req, res) => {
 });
 
 const handleDeleteProduct = asyncHandler(async (req, res) => {
-    const product = await productService.deleteProduct(req.params.id);
+    const product = await productService.deleteProduct(req.params.id, req.user.id);
 
     res.status(200).json({
         success: true,
@@ -225,7 +225,7 @@ const handleImportProducts = asyncHandler(async (req, res) => {
         });
     }
 
-    const result = await productService.importProductsFromCSV(req.file.buffer);
+    const result = await productService.importProductsFromCSV(req.file.buffer, req.user.id);
 
 
     return res.status(200).json({
