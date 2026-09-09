@@ -397,10 +397,15 @@ const getTopProductsByQuantitySold = async (filters) => {
     const query = `
         SELECT p.*, SUM(oi.quantity) AS sold_quantity
         FROM order_item AS oi
-        JOIN orders AS o ON oi.fk_order_id = o.id and o.status IN ('DELIVERED', 'SHIPPED')
+        JOIN orders AS o ON oi.fk_order_id = o.id
+            AND o.status IN ('DELIVERED', 'SHIPPED')
+            AND o.hist_id IS NULL
+            AND o.is_deleted = FALSE
         JOIN product AS p ON oi.fk_product_id = p.id
             AND p.hist_id IS NULL
             AND p.is_deleted = FALSE
+        WHERE oi.hist_id IS NULL
+            AND oi.is_deleted = FALSE
         GROUP BY p.id
         ORDER BY sold_quantity DESC
         LIMIT $1
