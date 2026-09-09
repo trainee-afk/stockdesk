@@ -1,17 +1,17 @@
 const db = require("../config/db");
 
-const createOrderQuery = ({ customerId, totalAmount }) => {
+const createOrderQuery = ({ customerId, totalAmount, createdBy = null }) => {
     const query = `
-		INSERT INTO orders (fk_customer_id, status, total_amount)
-		VALUES ($1, $2, $3)
+        INSERT INTO orders (fk_customer_id, status, total_amount, created_by, hist_id, is_deleted)
+        VALUES ($1, $2, $3, $4, NULL, FALSE)
 		RETURNING *;
 	`;
-    const values = [customerId, "PENDING", totalAmount];
+    const values = [customerId, "PENDING", totalAmount, createdBy];
 
     return { query, values };
 };
 
-const createOrderItemsQuery = (orderId, lineItems) => {
+const createOrderItemsQuery = (orderId, lineItems, createdBy = null) => {
     const values = [];
     const itemValues = lineItems.map(({ productId, quantity, unitPrice, lineTotal }) => {
         const orderIdParam = values.length + 1;
@@ -19,15 +19,16 @@ const createOrderItemsQuery = (orderId, lineItems) => {
         const quantityParam = values.length + 3;
         const unitPriceParam = values.length + 4;
         const lineTotalParam = values.length + 5;
+        const createdByParam = values.length + 6;
 
-        values.push(orderId, productId, quantity, unitPrice, lineTotal);
+        values.push(orderId, productId, quantity, unitPrice, lineTotal, createdBy);
 
-        return `($${orderIdParam}, $${productIdParam}, $${quantityParam}, $${unitPriceParam}, $${lineTotalParam})`;
+        return `($${orderIdParam}, $${productIdParam}, $${quantityParam}, $${unitPriceParam}, $${lineTotalParam}, $${createdByParam}, NULL, FALSE)`;
     });
 
     const query = `
 		INSERT INTO order_item
-			(fk_order_id, fk_product_id, quantity, unit_price, line_total)
+            (fk_order_id, fk_product_id, quantity, unit_price, line_total, created_by, hist_id, is_deleted)
 		VALUES ${itemValues.join(", ")}
 		RETURNING *;
 	`;

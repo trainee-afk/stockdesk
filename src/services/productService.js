@@ -129,6 +129,26 @@ const deleteProduct = async (productId, deletedBy = null) => {
     }
 };
 
+const decreaseStock = async (client, lineItems, updatedBy = null) => {
+    const productIds = lineItems.map(({ productId }) => productId);
+    const historyQuery = productModel.createProductsHistoryQuery(productIds);
+    await client.query(historyQuery.query, historyQuery.values);
+
+    const decreaseStockQuery = productModel.decreaseStockQuery(lineItems, updatedBy);
+    const stockResult = await client.query(
+        decreaseStockQuery.query,
+        decreaseStockQuery.values
+    );
+
+    if (stockResult.rowCount !== lineItems.length) {
+        const error = new Error("Insufficient stock");
+        error.statusCode = 409;
+        throw error;
+    }
+
+    return stockResult.rows;
+};
+
 
 const getProducts = async (filters) => {
 
@@ -256,6 +276,7 @@ module.exports = {
     getProductById,
     updateProduct,
     deleteProduct,
+    decreaseStock,
     getProducts,
     getTopProductsByQuantitySold,
     getLowStockProducts,

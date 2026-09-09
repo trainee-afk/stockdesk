@@ -3,8 +3,9 @@ const Decimal = require("decimal.js");
 const customerModel = require("../models/customerModel");
 const productModel = require("../models/productModel");
 const orderModel = require("../models/orderModel");
+const productService = require("./productService");
 
-const createOrder = async (orderData) => {
+const createOrder = async (orderData, createdBy = null) => {
 
     const { customerId, lineItems } = orderData;
 
@@ -37,7 +38,10 @@ const createOrder = async (orderData) => {
         }
 
         const productIds = updatedLineItems.map(({ productId }) => productId);
-        const productsQuery = productModel.getProductsQuery({ productIds });
+        const productsQuery = productModel.getProductsQuery({
+            productIds,
+            includeDeleted: false,
+        });
         const productsResult = await client.query(
             productsQuery.query,
             productsQuery.values
@@ -72,20 +76,12 @@ const createOrder = async (orderData) => {
             );
         }
 
-        const decreaseStockQuery = productModel.decreaseStockQuery(updatedLineItems);
-        const stockResult = await client.query(
-            decreaseStockQuery.query,
-            decreaseStockQuery.values
-        );
-        if (stockResult.rowCount !== updatedLineItems.length) {
-            const error = new Error("Insufficient stock");
-            error.statusCode = 409;
-            throw error;
-        }
+        await productService.decreaseStock(client, updatedLineItems, createdBy);
 
         const createOrderQuery = orderModel.createOrderQuery({
             customerId,
             totalAmount: totalAmount.toFixed(2),
+            createdBy,
         });
         const orderResult = await client.query(
             createOrderQuery.query,
@@ -107,7 +103,8 @@ const createOrder = async (orderData) => {
 
         const createOrderItemsQuery = orderModel.createOrderItemsQuery(
             order.id,
-            orderItems
+            orderItems,
+            createdBy
         );
         const orderItemsResult = await client.query(
             createOrderItemsQuery.query,

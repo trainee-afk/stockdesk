@@ -36,7 +36,10 @@ const showOrderDetailPage = asyncHandler(async (req, res) => {
 const handleCreateOrder = asyncHandler(async (req, res) => {
     const { customerId, lineItems } = req.body;
 
-    const order = await orderService.createOrder({ customerId, lineItems });
+    const order = await orderService.createOrder(
+        { customerId, lineItems },
+        req.user.id
+    );
 
     res.status(201).json({
         success: true,

@@ -130,6 +130,38 @@ const createProductHistoryQuery = (productId) => ({
     values: [productId],
 });
 
+const createProductsHistoryQuery = (productIds) => ({
+    query: `
+        INSERT INTO product (
+            name,
+            sku,
+            price,
+            stock_quantity,
+            fk_category_id,
+            created_by,
+            created_at,
+            hist_id,
+            is_deleted
+        )
+        SELECT
+            name,
+            sku,
+            price,
+            stock_quantity,
+            fk_category_id,
+            created_by,
+            created_at,
+            id,
+            is_deleted
+        FROM product
+        WHERE id = ANY($1::int[])
+          AND hist_id IS NULL
+          AND is_deleted = FALSE
+        RETURNING *
+    `,
+    values: [productIds],
+});
+
 const updateProductQuery = (productId, productData, updatedBy = null) => {
     const fields = [];
     const values = [];
@@ -187,10 +219,27 @@ const deleteProductQuery = (productId, deletedBy = null) => ({
 const getProductsQuery = (filters) => {
 
     let paramIndex = 1;
-    const fields = ["hist_id IS NULL", "is_deleted = FALSE"];
+    const fields = ["hist_id IS NULL"];
     const values = [];
 
-    const { page, limit, search, categoryId, minPrice, maxPrice, inStock, sortBy, order, productIds, stock_threshold } = filters || {};
+    const {
+        page,
+        limit,
+        search,
+        categoryId,
+        minPrice,
+        maxPrice,
+        inStock,
+        sortBy,
+        order,
+        productIds,
+        stock_threshold,
+        includeDeleted = false,
+    } = filters || {};
+
+    if (!includeDeleted) {
+        fields.push("is_deleted = FALSE");
+    }
 
     if (search && search.trim() !== "") {
         fields.push(`(name ilike $${paramIndex} or sku ilike $${paramIndex})`);
@@ -233,7 +282,9 @@ const getProductsQuery = (filters) => {
         paramIndex++;
     }
 
-    const whereClause = `WHERE ${fields.join(" AND ")}`;
+    const whereClause = fields.length > 0
+        ? `WHERE ${fields.join(" AND ")}`
+        : "";
 
     let orderByClause = "";
     if (sortBy) {
@@ -279,7 +330,7 @@ const getProductsCount = async (filters) => {
     return parseInt(result.rows[0].count);
 }
 
-const decreaseStockQuery = (lineItems) => {
+const decreaseStockQuery = (lineItems, updatedBy = null) => {
     const values = [];
     const requestedProducts = lineItems.map(({ productId, quantity }) => {
         const productIdParam = values.length + 1;
@@ -290,12 +341,19 @@ const decreaseStockQuery = (lineItems) => {
         return `($${productIdParam}::int, $${quantityParam}::int)`;
     });
 
+    const updatedByParam = values.length + 1;
+    values.push(updatedBy);
+
     const query = `
         UPDATE product AS p
-        SET stock_quantity = p.stock_quantity - requested.quantity
+        SET stock_quantity = p.stock_quantity - requested.quantity,
+            created_by = $${updatedByParam},
+            created_at = NOW()
         FROM (VALUES ${requestedProducts.join(", ")})
             AS requested(id, quantity)
         WHERE p.id = requested.id
+                    AND p.hist_id IS NULL
+                    AND p.is_deleted = FALSE
           AND p.stock_quantity >= requested.quantity
         RETURNING p.id, p.stock_quantity;
     `;
@@ -332,6 +390,7 @@ module.exports = {
     getProductById,
     getProductForUpdateQuery,
     createProductHistoryQuery,
+    createProductsHistoryQuery,
     updateProductQuery,
     deleteProductQuery,
     getProductsQuery,
