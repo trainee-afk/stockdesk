@@ -57,12 +57,20 @@ cp .env.example .env
 
 Update `.env` with the PostgreSQL connection details and a strong JWT secret.
 
+Start the PostgreSQL container before running migrations:
+
+```bash
+docker compose up -d postgres
+```
+
+The Compose setup exposes PostgreSQL on `localhost:5433`.
+
 Required environment variables:
 
 | Variable | Description | Example |
 | --- | --- | --- |
 | `PORT` | HTTP server port | `5000` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://postgres:postgres@localhost:5432/stockdesk` |
+| `DATABASE_URL` | PostgreSQL connection string | `postgres://postgres:postgres@localhost:5433/stockdesk` |
 | `JWT_SECRET` | Secret used to sign JWTs | `replace-with-a-long-secret` |
 | `CORS_ORIGIN` | Allowed CORS origin | `http://localhost:3000` |
 
@@ -70,6 +78,12 @@ Create the database, then run the migration:
 
 ```bash
 npm run migrate:up
+```
+
+To load the development seed data (this clears the application tables first):
+
+```bash
+npm run seed
 ```
 
 Start the application:
@@ -229,6 +243,19 @@ The migration creates tables for:
 
 The detailed schema and indexing decisions are documented in [docs/dbDesign.md](docs/dbDesign.md).
 
+### Audit and history
+
+Application rows use the following audit fields:
+
+- `created_at` records the row creation time and is refreshed when the live row is changed.
+- `created_by` records the user responsible for the latest create/update/delete action.
+- `hist_id` is `NULL` for the live row and points to the original row ID on history snapshots.
+- `is_deleted` marks a live row as soft-deleted; normal reads exclude deleted rows and history rows.
+
+Updates and deletes for products, categories, and customers copy the previous live row into the same table before changing the live row. Product stock changes use the same history approach inside the surrounding order transaction.
+
+Active users, products, suppliers, and customers use partial unique indexes so historical or deleted rows do not block new active records with the same email or SKU.
+
 To roll back the latest migration:
 
 ```bash
@@ -251,7 +278,7 @@ Potential follow-up work:
 - Edit-product server-rendered page and update form handling
 - Logout route/button
 - A dedicated web error page instead of JSON for unexpected web errors
-- Automated tests and seed data
+- Automated tests
 
 ## Health check
 
